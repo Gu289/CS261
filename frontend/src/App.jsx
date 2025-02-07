@@ -1,13 +1,17 @@
-import { Router, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './components/Home.jsx'
+import History from './components/History.jsx'
 
 function App() {
 
   return (
-    <Router>
-      <Route path="/" element={Home} />
-      <Route path="/history" />
-    </Router>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={Home} />
+        <Route path="/history" element={History} />
+      </Routes>
+    </BrowserRouter>
+    
   )
 }
 
