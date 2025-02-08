@@ -4,6 +4,13 @@
 * {
     font-family: 'Roboto';
     
+@theme {
+  --color-primary: #3266da;
+  --color-secondary: #82a5f3;
+  --color-accent: #417af9;
+  --color-background: #eff3fb;
+}
+
 }
 ::-webkit-scrollbar {
     width: 8px; /* Adjust width */
