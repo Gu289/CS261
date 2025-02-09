@@ -7,7 +7,7 @@ const InputItem = ({ direction, inbound }) => {
   return (
     <div className="flex justify-between items-center">
       <p className='text-xl p-5'>{direction !== inbound ? `${inbound} to ${direction} Outbound` : `${inbound} Inbound`}</p>
-    <input value={data} onChange={(e) => setData(e.target.value)} className='bg-secondary rounded-lg p-2 max-w-24 outline-none'/>
+    <input value={data} onChange={(e) => setData(e.target.value)} className='bg-secondary rounded-lg p-2 max-w-20 outline-none'/>
     </div>
   )
 }

@@ -5,10 +5,14 @@
     font-family: 'Roboto';
     
 @theme {
-  --color-primary: #3266da;
-  --color-secondary: #82a5f3;
-  --color-accent: #417af9;
-  --color-background: #eff3fb;
+  --color-primary: #b0b0b0;
+  --color-secondary: #d6d6d6;
+  --color-accent: #4A90E2;
+  --color-background: #fafafa;
+  --color-accent-hover: #357ABD;
+  --color-button: #E1ECF7;
+  --color-button-hover: #C5DAF2;
+  --color-button-text: #2C699D;
 }
 
 }
