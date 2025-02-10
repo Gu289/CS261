@@ -4,7 +4,7 @@ import Simulation from "./Simulation"
 const Home = () => {
 
     return(
-        <div className="bg-white h-screen grid grid-cols-3 overflow-hidden">
+        <div className="bg-white h-screen grid grid-cols-3 overflow-y-hidden">
             <Sidebar />
             <Simulation />
         </div>
