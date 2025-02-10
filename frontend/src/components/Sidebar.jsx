@@ -1,4 +1,5 @@
 import InputMenu from "./InputMenu"
+import ConfigMenu from "./ConfigMenu"
 import { useState } from "react"
 
 const Sidebar = () => {
@@ -11,7 +12,9 @@ const Sidebar = () => {
     north: { inbound: 0, east: 0, south: 0, west: 0},
     east: { inbound: 0, north: 0, south: 0, west: 0},
     south: { inbound: 0, north: 0, east: 0, west: 0},
-    west:{ inbound: 0, north: 0, east: 0, south: 0}
+    west:{ inbound: 0, north: 0, east: 0, south: 0},
+    leftTurn: false,
+    numLanes: 2
   })
   
   // change traffic data according to user
@@ -40,6 +43,15 @@ const Sidebar = () => {
     }
   }
 
+  const handleConfigurable = (type, value) => {
+    setTrafficData((prev) => ({
+      ...prev,
+      [type]: value
+    }))
+  }
+
+  // to fix
+
   // validation function when user tries to start simulation
   const validateTrafficValues = () => {
 
@@ -55,6 +67,7 @@ const Sidebar = () => {
         {directions.map((direction, index) => (
           <InputMenu key={index} inboundDirection={direction} directions={directions} handleTrafficChange={handleTrafficChange} trafficData={trafficData}/>
         ))}
+        <ConfigMenu handleConfigurable={handleConfigurable} />
         <div className="flex justify-center">
           <button type="button" onClick={validateTrafficValues} className="text-2xl rounded-lg text-white bg-accent px-5 py-3 shadow-md cursor-pointer hover:bg-accent-hover transition duration-300">Start Simulation</button>
         </div>
