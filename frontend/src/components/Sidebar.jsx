@@ -1,11 +1,18 @@
 import InputMenu from "./InputMenu"
 import ConfigMenu from "./ConfigMenu"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link } from "react-router-dom";
+import axios from 'axios';
 
 const Sidebar = () => {
 
   const directions = ["north", "east", "south", "west"]
+  const [startSim, setStartSim] = useState(false)
+  const url = "http://127.0.0.1:8000/simulation/create-simulation/"
+  const header = {
+    "X-CSRFToken": "8wrYvihHXztobouUK2K0HMzED9uDB8fz",
+    "Content-Type": "application/x-www-form-urlencoded"
+  }
 
   // state containing all traffic data
   // passed down to InputMenu -> InboundItem and OutboundItem to show changed values
@@ -44,6 +51,7 @@ const Sidebar = () => {
     }
   }
 
+  // change configurable parameters value
   const handleConfigurable = (type, value) => {
       setTrafficData((prev) => ({
         ...prev,
@@ -55,6 +63,24 @@ const Sidebar = () => {
   const validateTrafficValues = () => {
 
   }
+
+  // send trafficData to the backend for simulation
+  useEffect(() => {
+
+    if(!startSim) return;
+
+    const createSimulation = async () => {
+      try {
+        const response = await axios.post(url,trafficData, header);
+        console.log(response);
+      } catch (error) {
+        console.error(error)
+      }
+
+    }
+
+    createSimulation()
+  }, [startSim])
 
   return (
     <div className="bg-background flex flex-col overflow-y-auto">
@@ -68,7 +94,7 @@ const Sidebar = () => {
         ))}
         <ConfigMenu trafficData={trafficData} handleConfigurable={handleConfigurable} />
         <div className="flex justify-center">
-          <button type="button" onClick={validateTrafficValues} className="text-2xl rounded-lg text-white bg-accent px-5 py-3 shadow-md cursor-pointer hover:bg-accent-hover transition duration-300">Start Simulation</button>
+          <button type="button" onClick={() => setStartSim(true)} className="text-2xl rounded-lg text-white bg-accent px-5 py-3 shadow-md cursor-pointer hover:bg-accent-hover transition duration-300">Start Simulation</button>
         </div>
       </div>
     </div>
