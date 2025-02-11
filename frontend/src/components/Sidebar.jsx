@@ -1,11 +1,18 @@
 import InputMenu from "./InputMenu"
 import ConfigMenu from "./ConfigMenu"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link } from "react-router-dom";
+import axios from 'axios';
 
 const Sidebar = () => {
 
   const directions = ["north", "east", "south", "west"]
+  const [startSim, setStartSim] = useState(false)
+  const url = "http://127.0.0.1:8000/simulation/create-simulation/"
+  const header = {
+    "X-CSRFToken": "8wrYvihHXztobouUK2K0HMzED9uDB8fz",
+    "Content-Type": "application/x-www-form-urlencoded"
+  }
 
   // state containing all traffic data
   // passed down to InputMenu -> InboundItem and OutboundItem to show changed values
@@ -44,24 +51,41 @@ const Sidebar = () => {
     }
   }
 
+  // change configurable parameters value
   const handleConfigurable = (type, value) => {
-    setTrafficData((prev) => ({
-      ...prev,
-      [type]: value
-    }))
-  }
-
-  // to fix
+      setTrafficData((prev) => ({
+        ...prev,
+        [type]: value
+      }))
+    }
 
   // validation function when user tries to start simulation
   const validateTrafficValues = () => {
 
   }
 
+  // send trafficData to the backend for simulation
+  useEffect(() => {
+
+    if(!startSim) return;
+
+    const createSimulation = async () => {
+      try {
+        const response = await axios.post(url,trafficData, header);
+        console.log(response);
+      } catch (error) {
+        console.error(error)
+      }
+
+    }
+
+    createSimulation()
+  }, [startSim])
+
   return (
     <div className="bg-background flex flex-col overflow-y-auto">
       <div className="mt-5 ml-5">
-        <Link to="/history" className="bg-button px-8 py-5 rounded-2xl shadow-md text-2xl hover:bg-button-hover transition duration-300 cursor-pointer">History</Link>
+        <Link to="/history"><button type="button" className="bg-button px-8 py-5 rounded-2xl shadow-md text-2xl hover:bg-button-hover transition duration-300 cursor-pointer">History</button></Link>
       </div>
       <div className="p-5 flex flex-col gap-5">
         {/* make input form for each direction */}
@@ -70,7 +94,7 @@ const Sidebar = () => {
         ))}
         <ConfigMenu trafficData={trafficData} handleConfigurable={handleConfigurable} />
         <div className="flex justify-center">
-          <button type="button" onClick={validateTrafficValues} className="text-2xl rounded-lg text-white bg-accent px-5 py-3 shadow-md cursor-pointer hover:bg-accent-hover transition duration-300">Start Simulation</button>
+          <button type="button" onClick={() => setStartSim(true)} className="text-2xl rounded-lg text-white bg-accent px-5 py-3 shadow-md cursor-pointer hover:bg-accent-hover transition duration-300">Start Simulation</button>
         </div>
       </div>
     </div>
