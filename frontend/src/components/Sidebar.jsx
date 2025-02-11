@@ -77,8 +77,12 @@ const Sidebar = () => {
 
     const createSimulation = async () => {
       try {
-        const response = await axios.post(url,trafficData, header);
-        console.log(response);
+        const response = await axios.post(url,trafficData);
+        const sim_id = response.data.simulation_id
+        if(response.status === 200){
+          const res = await axios.post(`http://127.0.0.1:8000/simulation/start-simulation/?simulation_id=${sim_id}`)
+          console.log(res);
+        }
       } catch (error) {
         console.error(error)
       }
@@ -92,6 +96,17 @@ const Sidebar = () => {
     withCredentials: true,
   }
   
+  const [token, setToken] = useState("");
+
+  useEffect(() => {
+    const getToken = async () => {
+      const { data } = await axios.get("http://127.0.0.1:8000/simulation/get-csrf-token/");
+      console.log(data.csrf_token)
+      setToken(data.csrf_token)
+    }
+
+    getToken();
+  }, [])
 
   // useEffect(() => {
   //   const getToken = async () => {
