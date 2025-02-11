@@ -2,8 +2,13 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from .models import Simulation
 from .serializers import SimulationSerializer
+from django.middleware.csrf import get_token
 
 import json
+
+def get_csrf_token(request):
+    csrf_token = get_token(request)
+    return JsonResponse({"csrf_token": csrf_token},status=200)
 
 def create_simulation(request):
     '''

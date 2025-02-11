@@ -28,6 +28,9 @@ DEBUG = True
 NGROK_URL = "7416-2a0a-ef40-b56-e801-287f-b6e6-e6d3-2580.ngrok-free.app"
 ALLOWED_HOSTS = [NGROK_URL, '127.0.0.1', 'localhost', 'localhost:5173']
 
+# SECURITY WARNING: update this when you have the production host
+CORS_ALLOW_ALL_ORIGINS = True
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -38,10 +41,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'simulation',
-    'corsheaders'
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
