@@ -45,13 +45,11 @@ const Sidebar = () => {
   }
 
   const handleConfigurable = (type, value) => {
-    setTrafficData((prev) => ({
-      ...prev,
-      [type]: value
-    }))
-  }
-
-  // to fix
+      setTrafficData((prev) => ({
+        ...prev,
+        [type]: value
+      }))
+    }
 
   // validation function when user tries to start simulation
   const validateTrafficValues = () => {
@@ -61,7 +59,7 @@ const Sidebar = () => {
   return (
     <div className="bg-background flex flex-col overflow-y-auto">
       <div className="mt-5 ml-5">
-        <Link to="/history" className="bg-button px-8 py-5 rounded-2xl shadow-md text-2xl hover:bg-button-hover transition duration-300 cursor-pointer">History</Link>
+        <Link to="/history"><button type="button" className="bg-button px-8 py-5 rounded-2xl shadow-md text-2xl hover:bg-button-hover transition duration-300 cursor-pointer">History</button></Link>
       </div>
       <div className="p-5 flex flex-col gap-5">
         {/* make input form for each direction */}
