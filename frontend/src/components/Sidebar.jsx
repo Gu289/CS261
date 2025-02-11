@@ -10,9 +10,15 @@ const Sidebar = () => {
   const [startSim, setStartSim] = useState(false)
   const url = "http://127.0.0.1:8000/simulation/create-simulation/"
   const header = {
-    "X-CSRFToken": "8wrYvihHXztobouUK2K0HMzED9uDB8fz",
+    "X-CSRFToken": "OUsTjuV6IITnimp08TrObS65eMI4fyC5",
     "Content-Type": "application/x-www-form-urlencoded"
   }
+
+  const headers = {
+    "Content-Type": "application/x-www-form-urlencoded"
+  }
+
+  
 
   // state containing all traffic data
   // passed down to InputMenu -> InboundItem and OutboundItem to show changed values
@@ -81,6 +87,32 @@ const Sidebar = () => {
 
     createSimulation()
   }, [startSim])
+
+  let axiosConfig = {
+    withCredentials: true,
+  }
+  
+
+  // useEffect(() => {
+  //   const getToken = async () => {
+  //     try{
+  //       const response = await axios.get("http://127.0.0.1:8000/admin/", axiosConfig);
+        
+  //       const getCookie = (name) => {
+  //         const value = `; ${document.cookie}`;
+  //         const parts = value.split(`; ${name}=`);
+  //         if (parts.length === 2) return parts.pop().split(";").shift();
+  //       };
+    
+  //       const csrftoken = getCookie("csrftoken");
+  //       console.log(csrftoken)
+  //     } catch(error){
+  //       console.error(error)
+  //     }
+  //   }
+
+  //   getToken();
+  // }, [])
 
   return (
     <div className="bg-background flex flex-col overflow-y-auto">
