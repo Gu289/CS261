@@ -91,13 +91,10 @@ const Sidebar = () => {
 
     createSimulation()
   }, [startSim])
-
-  let axiosConfig = {
-    withCredentials: true,
-  }
   
   const [token, setToken] = useState("");
 
+  //
   useEffect(() => {
     const getToken = async () => {
       const { data } = await axios.get("http://127.0.0.1:8000/simulation/get-csrf-token/");
