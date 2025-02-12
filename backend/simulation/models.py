@@ -13,6 +13,7 @@ class Simulation(models.Model):
     def __str__(self):
         return f"Simulation {self.simulation_id}"
 
+<<<<<<< HEAD
 from django.utils import timezone
 
 class Queue(models.Model):
@@ -76,3 +77,5 @@ class Vehicle(models.Model):
 
     def __str__(self):
         return f"Vehicle {self.id} ({self.vehicle_type}) - Arrived: {self.arrival_time}, Departed: {self.departure_time}"
+=======
+>>>>>>> origin/api
