@@ -6,22 +6,18 @@ import axios from 'axios';
 
 const Sidebar = () => {
 
+  // used to efficiently map and return Input Form components
   const directions = ["north", "east", "south", "west"]
-  const [startSim, setStartSim] = useState(false)
-  const url = "http://127.0.0.1:8000/simulation/create-simulation/"
-  const header = {
-    "X-CSRFToken": "OUsTjuV6IITnimp08TrObS65eMI4fyC5",
-    "Content-Type": "application/x-www-form-urlencoded"
-  }
 
-  const headers = {
-    "Content-Type": "application/x-www-form-urlencoded"
-  }
+  // simulation state
+  // set to true by start simulation button
+  // when true the button becomes disabled
+  const [startSim, setStartSim] = useState(false) 
 
-  
+  const [errorMsg, setErrorMsg] = useState("")
 
   // state containing all traffic data
-  // passed down to InputMenu -> InboundItem and OutboundItem to show changed values
+  // passed down to InputMenu -> InboundItem and InputMenu -> OutboundItem to show changed values
   const [trafficData, setTrafficData] = useState({
     north: { inbound: 0, east: 0, south: 0, west: 0},
     east: { inbound: 0, north: 0, south: 0, west: 0},
@@ -39,6 +35,7 @@ const Sidebar = () => {
     const num = Number(value)
     // only accept numeric values
     if(!isNaN(num) && value !== ""){
+      // copy the whole previous state, but then change specific direction and inbound/outbound with value
       setTrafficData((prev) => ({
         ...prev,
         [direction]: {
@@ -59,6 +56,7 @@ const Sidebar = () => {
 
   // change configurable parameters value
   const handleConfigurable = (type, value) => {
+    // copy previous state and update leftTurn or numLanes value based on who called the function
       setTrafficData((prev) => ({
         ...prev,
         [type]: value
@@ -67,64 +65,47 @@ const Sidebar = () => {
 
   // validation function when user tries to start simulation
   const validateTrafficValues = () => {
+    for(const dir of directions){
+      const inbound = trafficData[dir].inbound;
+      const outboundSum = Object.entries(trafficData[dir])
+        .filter(([key]) => key !== "inbound")
+        .reduce((sum, [, value]) => sum + value, 0)
+        if(inbound !== outboundSum){
+          setErrorMsg("Inputs invalid")
+          setStartSim(false)
+          return false;
+        }  
+      }
+      setErrorMsg("")
+      return true
+  }
 
+  // send post request to backend to create the simulation and receive the simulation id
+  // then send post request with given simulation id to start the simulation
+  const createSimulation = async () => {
+    try {
+      const response = await axios.post("http://127.0.0.1:8000/simulation/create-simulation/",trafficData);
+      const sim_id = response.data.simulation_id
+      if(response.status === 200){
+        const res = await axios.post(`http://127.0.0.1:8000/simulation/start-simulation/?simulation_id=${sim_id}`)
+        console.log(res);
+      }
+    } catch (error) {
+      setErrorMsg("Error with the creation of the simulation")
+      console.error(error)
+    }
   }
 
   // send trafficData to the backend for simulation
   useEffect(() => {
 
-    if(!startSim) return;
+    if(!startSim) return; 
 
-    const createSimulation = async () => {
-      try {
-        const response = await axios.post(url,trafficData);
-        const sim_id = response.data.simulation_id
-        if(response.status === 200){
-          const res = await axios.post(`http://127.0.0.1:8000/simulation/start-simulation/?simulation_id=${sim_id}`)
-          console.log(res);
-        }
-      } catch (error) {
-        console.error(error)
-      }
-
+    // if inputs are valid then send to backend and start the simulation
+    if(validateTrafficValues()){
+      createSimulation()
     }
-
-    createSimulation()
   }, [startSim])
-  
-  const [token, setToken] = useState("");
-
-  //
-  useEffect(() => {
-    const getToken = async () => {
-      const { data } = await axios.get("http://127.0.0.1:8000/simulation/get-csrf-token/");
-      console.log(data.csrf_token)
-      setToken(data.csrf_token)
-    }
-
-    getToken();
-  }, [])
-
-  // useEffect(() => {
-  //   const getToken = async () => {
-  //     try{
-  //       const response = await axios.get("http://127.0.0.1:8000/admin/", axiosConfig);
-        
-  //       const getCookie = (name) => {
-  //         const value = `; ${document.cookie}`;
-  //         const parts = value.split(`; ${name}=`);
-  //         if (parts.length === 2) return parts.pop().split(";").shift();
-  //       };
-    
-  //       const csrftoken = getCookie("csrftoken");
-  //       console.log(csrftoken)
-  //     } catch(error){
-  //       console.error(error)
-  //     }
-  //   }
-
-  //   getToken();
-  // }, [])
 
   return (
     <div className="bg-background flex flex-col overflow-y-auto">
@@ -138,7 +119,7 @@ const Sidebar = () => {
         ))}
         <ConfigMenu trafficData={trafficData} handleConfigurable={handleConfigurable} />
         <div className="flex justify-center">
-          <button type="button" onClick={() => setStartSim(true)} className="text-2xl rounded-lg text-white bg-accent px-5 py-3 shadow-md cursor-pointer hover:bg-accent-hover transition duration-300">Start Simulation</button>
+          <button type="button" disabled={startSim} onClick={() => setStartSim(true)} className="text-2xl rounded-lg text-white bg-accent px-5 py-3 shadow-md cursor-pointer hover:bg-accent-hover transition duration-300">Start Simulation</button>
         </div>
       </div>
     </div>
