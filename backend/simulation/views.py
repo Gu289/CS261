@@ -2,8 +2,13 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from .models import Simulation
 from .serializers import SimulationSerializer
+from django.middleware.csrf import get_token
 
 import json
+
+def get_csrf_token(request):
+    csrf_token = get_token(request)
+    return JsonResponse({"csrf_token": csrf_token},status=200)
 
 def create_simulation(request):
     '''
@@ -118,7 +123,38 @@ def get_completed_simulations(request):
     It retrieves all Simulation objects from the database and returns a JSON response with all simulations.
     '''
     if request.method == 'GET':
-        simulations = Simulation.objects.filter(simulation_status = "completed")
+        simulations = Simulation.objects.filter(simulation_status = "completed", is_deleted=False)
         serializer = SimulationSerializer(simulations, many=True)
         return JsonResponse(serializer.data,status=200, safe=False)
+    return JsonResponse({"Error": "Invalid request method"},status=405)
+
+def delete_simulation(request):
+    '''
+    This function is called when a DELETE request is made to the /delete-simulation/ endpoint.
+    It deletes the Simulation object with the provided simulation_id from the database and returns a JSON response with the status.
+    '''
+    if request.method == 'DELETE':
+        simulation_id = request.GET.get('simulation_id')
+        if simulation_id:
+            try:
+                simulation = Simulation.objects.get(simulation_id=simulation_id)
+                simulation.is_deleted = True
+                simulation.save()
+                success_message = {
+                    "message": f"Simulation id {simulation_id} deleted successfully",
+                    "simulation_status": "Deleted"
+                }
+                return JsonResponse(success_message,status=200)
+            except Simulation.DoesNotExist:
+                error_message = {
+                    "Error": f"Simulation id {simulation_id} not found",
+                    "simulation_status": "Not found"
+                }
+                return JsonResponse(error_message,status=404)
+        else:
+            error_message = {
+                "Error": "Simulation ID not provided",
+                "simulation_status": "Not found"
+            }
+            return JsonResponse(error_message,status=400)
     return JsonResponse({"Error": "Invalid request method"},status=405)
