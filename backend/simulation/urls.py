@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from .views import create_simulation, check_simulation_status, start_simulation, get_completed_simulations, delete_simulation, get_csrf_token
+from .views import *
 
 urlpatterns = [
     path('get-csrf-token/', get_csrf_token),
@@ -9,4 +9,5 @@ urlpatterns = [
     path('check-simulation-status/', check_simulation_status),
     path('completed-simulations/', get_completed_simulations),
     path('delete-simulation/', delete_simulation),
+    path('test-background-task/', test_background_task),
 ]
