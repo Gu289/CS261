@@ -3,7 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from .models import Simulation
 from .serializers import SimulationSerializer
 from django.middleware.csrf import get_token
-from .tasks import my_background_task
+from .tasks import my_background_task, run_simulation
 from .simulation_engine import SimulationEngine
 import json
 
@@ -78,27 +78,28 @@ def start_simulation(request):
         return JsonResponse({"Error": "Simulation already running or completed"},status=400)
 
     # TODO: Start simulation with the parameters and returns a boolean, true if successful, false otherwise
-    
-    # Call the simulation engine to run the simulation.
-    engine = SimulationEngine(simulation=simulation, simulationTime=60, timeStep=1)
-    engine.runSimulation()
-    simulation_results = engine.results 
-    # update simulation fields and return a JSON response.
+    try:
+        task = run_simulation.delay(simulation_id)
+    except Exception as e:
+        error_message = {
+            "Error": f"Failed to start simulation id {simulation_id}",
+            "simulation_status": "Not started",
+            "error_message": str(e)
+        }
+        return JsonResponse(error_message,status=400)
 
-
-    is_successful = True
 
     junction_config = simulation.junction_config
-    if is_successful:
-        simulation.simulation_status = "running"
-        simulation.save()
-        success_message = {
-            "message": "Simulation started and updated successfully",
-            "simulation_id": simulation.simulation_id,
-            "simulation_status": "running",
-            "junction_config": junction_config
-        }
-        return JsonResponse(success_message,status=200)
+    simulation.simulation_status = "running"
+    simulation.save()
+    success_message = {
+        "message": "Simulation started and updated successfully",
+        "simulation_id": simulation.simulation_id,
+        "simulation_status": "running",
+        "junction_config": junction_config,
+        "task_id": task.id
+    }
+    return JsonResponse(success_message,status=200)
     
 
 def check_simulation_status(request):
