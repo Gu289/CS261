@@ -1,46 +1,60 @@
 from django.utils import timezone
 from .models import Simulation, Queue, Vehicle
+from .junction_classes import Junction, Direction, SimulationResults
 
 class SimulationEngine:
-    def __init__(self, simulation, time_step=1):
+    def __init__(self, simulation, simulationTime, timeStep):
         """
         Initialize the simulation engine.
 
-        Args:
-            simulation (Simulation): An instance of the Simulation model containing junction configuration.
-            time_step (int): The simulation time step in seconds.
+        Attributes:
+            simulationTime (int): Total simulation running time in seconds.
+            timeStep (int): The simulation time step in seconds.
+            simulation (Simulation): A Simulation model instance with a junction_config.
+            junction (Junction): The junction built from simulation.junction_config.
+            results (SimulationResults): The simulation results (populated after simulation run).
         """
         self.simulation = simulation
-        self.time_step = time_step
+        self.simulationTime = simulationTime
+        self.timeStep = timeStep
 
-        # For simplicity, assume we are using a single Queue for our simulation.
-        # Here, we retrieve the first available queue or create one if none exist.
-        self.queue, created = Queue.objects.get_or_create(id=1, defaults={'max_size': 10})
+        # For backwards compatibility, continue using the default queue.
+        self.queue, _ = Queue.objects.get_or_create(id=1, defaults={'max_size': 10})
+        
+        # Create Junction from simulation configuration.
+        directions_config = self.simulation.junction_config.get("directions", [])
+        directions = []
+        for d_conf in directions_config:
+            direction_obj = Direction(
+                direction_name=d_conf.get("name"),
+                incoming_flow_rate=d_conf.get("incoming_flow_rate", 0),
+                lane_count=d_conf.get("lane_count", 1),
+                exit_distribution=d_conf.get("exit_distribution", {})
+            )
+            directions.append(direction_obj)
+        # Create default directions if none provided.
+        if not directions:
+            default_names = ["north", "east", "south", "west"]
+            directions = [Direction(direction_name=name) for name in default_names]
+        self.junction = Junction(directions)
+        self.results = None
 
-    def run_simulation(self, simulation_duration):
+    def runSimulation(self):
         """
-        Run the simulation for a specified duration.
-
-        Args:
-            simulation_duration (int): Duration in seconds for which the simulation will run.
-
-        Returns:
-            dict: A dictionary with simulation metrics such as average wait time, maximum wait time, maximum queue length, and total vehicles processed.
+        Runs the simulation over the specified simulationTime using the timeStep.
+        Vehicles are enqueued, processed and the junction traffic is updated at each time step.
+        At the end, the simulation results are calculated and stored in self.results.
         """
         start_time = timezone.now()
-        end_time = start_time + timezone.timedelta(seconds=simulation_duration)
+        end_time = start_time + timezone.timedelta(seconds=self.simulationTime)
         current_time = start_time
         iteration = 0
 
-        # For demonstration purposes, at each time step:
-        # - A new vehicle is created and enqueued.
-        # - Every 2 iterations, a vehicle is dequeued (if available).
         while current_time < end_time:
             # Create and enqueue a new vehicle.
             new_vehicle = Vehicle.objects.create(vehicle_type="car")
             enqueued = self.queue.enqueue(new_vehicle)
             if not enqueued:
-                # Optionally, log that the queue is full and the vehicle was not enqueued.
                 print(f"Iteration {iteration}: Queue is full. Vehicle {new_vehicle.id} was dropped.")
             else:
                 print(f"Iteration {iteration}: Vehicle {new_vehicle.id} enqueued at {timezone.now()}.")
@@ -51,28 +65,22 @@ class SimulationEngine:
                 if departed_vehicle:
                     print(f"Iteration {iteration}: Vehicle {departed_vehicle.id} dequeued at {timezone.now()}.")
 
+            # Process traffic through the junction.
+            self.junction.process_traffic()
+
             iteration += 1
-            current_time += timezone.timedelta(seconds=self.time_step)
-            # In a real simulation you might want to pause for self.time_step seconds:
-            # time.sleep(self.time_step)
+            current_time += timezone.timedelta(seconds=self.timeStep)
+            # You may optionally pause with time.sleep(self.timeStep)
 
-        # Calculate simulation metrics after completion.
-        avg_wait_time, max_wait_time, max_queue_length = self.calculate_metrics()
-        total_processed = Vehicle.objects.filter(queue__isnull=True).count()  # Vehicles that have been dequeued.
+        # After simulation, calculate and store results.
+        self.results = self.calculateResults()
 
-        return {
-            "average_wait_time": avg_wait_time,
-            "max_wait_time": max_wait_time,
-            "max_queue_length": max_queue_length,
-            "total_vehicles_processed": total_processed,
-        }
-
-    def calculate_metrics(self):
+    def calculateResults(self):
         """
-        Calculate key traffic metrics based on departed vehicles.
-
+        Calculates the key traffic metrics based on departed vehicles.
         Returns:
-            tuple: (average_wait_time, max_wait_time, max_queue_length)
+            SimulationResults: An instance containing average_wait_time, max_wait_time, max_queue_length
+                               and total_vehicles_processed.
         """
         departed_vehicles = Vehicle.objects.filter(departure_time__isnull=False)
         total_wait_time = 0
@@ -80,16 +88,21 @@ class SimulationEngine:
         count = departed_vehicles.count()
 
         for vehicle in departed_vehicles:
-            # Calculate the waiting time in seconds.
             wait_time = (vehicle.departure_time - vehicle.arrival_time).total_seconds()
             total_wait_time += wait_time
             if wait_time > max_wait_time:
                 max_wait_time = wait_time
 
         avg_wait_time = total_wait_time / count if count > 0 else 0
-
-        # For simplicity, we use the current queue size as our max queue length.
-
         max_queue_length = self.queue.current_size()
+        total_processed = Vehicle.objects.filter(queue__isnull=True).count()
 
-        return avg_wait_time, max_wait_time, max_queue_length
+        # Create a SimulationResults instance from the junction's directions.
+        results = SimulationResults(self.junction.directions)
+        results.average_wait_time = avg_wait_time
+        results.max_wait_time = max_wait_time
+        results.max_queue_length = max_queue_length
+        # Optionally, store total vehicles processed if desired.
+        results.total_vehicles_processed = total_processed
+
+        return results
