@@ -4,7 +4,7 @@ from .models import Simulation
 from .serializers import SimulationSerializer
 from django.middleware.csrf import get_token
 from .tasks import my_background_task
-
+from .simulation_engine import SimulationEngine
 import json
 
 def get_csrf_token(request):
@@ -78,6 +78,14 @@ def start_simulation(request):
         return JsonResponse({"Error": "Simulation already running or completed"},status=400)
 
     # TODO: Start simulation with the parameters and returns a boolean, true if successful, false otherwise
+    
+    # Call the simulation engine to run the simulation.
+    engine = SimulationEngine(simulation=simulation, simulationTime=60, timeStep=1)
+    engine.runSimulation()
+    simulation_results = engine.results 
+    # update simulation fields and return a JSON response.
+
+
     is_successful = True
 
     junction_config = simulation.junction_config

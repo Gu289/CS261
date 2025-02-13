@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Trash, Filter, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const initialSimulations = [
   { id: 1, name: "Simulation #1", score: 85, date: "2024-02-10" },
@@ -42,6 +43,15 @@ const History = () => {
     setSimulations(sortedSimulations);
     setIsSortMenuOpen(false);
   };
+
+  useEffect(() => {
+    const getData = async () => {
+      const response = await axios.get("http://127.0.0.1:8000/simulation/completed-simulations/")
+      console.log(response)
+    }
+
+    getData();
+  }, [])
 
   return (
     <div className="flex h-screen bg-black text-white p-6 relative">
