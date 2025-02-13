@@ -52,7 +52,7 @@ class SimulationEngine:
 
         while current_time < end_time:
             # Create and enqueue a new vehicle.
-            new_vehicle = Vehicle.objects.create(vehicle_type="car")
+            new_vehicle = Vehicle.objects.create()
             enqueued = self.queue.enqueue(new_vehicle)
             if not enqueued:
                 print(f"Iteration {iteration}: Queue is full. Vehicle {new_vehicle.id} was dropped.")
