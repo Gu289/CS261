@@ -40,7 +40,7 @@ const Sidebar = () => {
         ...prev,
         [direction]: {
           ...prev[direction],
-          [type]: Math.max(0, Math.min(1000, Number(value))),
+          [type]: Number(value),
         }
       }))
     } else if(value === ""){
@@ -71,9 +71,14 @@ const Sidebar = () => {
         .filter(([key]) => key !== "inbound")
         .reduce((sum, [, value]) => sum + value, 0)
         if(inbound !== outboundSum){
-          setErrorMsg("Inputs invalid")
+          setErrorMsg("Inputs invalid. Inbound value must be equal to sum of Outbound values.")
           setStartSim(false)
           return false;
+        }
+        else if(inbound > 2000){
+          setErrorMsg("Inputs invalid. Values must not exceed 2000vph.")
+          setStartSim(false)
+          return false
         }  
       }
       setErrorMsg("")
@@ -108,7 +113,7 @@ const Sidebar = () => {
   }, [startSim])
 
   return (
-    <div className="bg-background flex flex-col overflow-y-auto">
+    <div className="bg-background flex flex-col overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700">
       <div className="mt-5 ml-5">
         <Link to="/history"><button type="button" className="bg-button px-8 py-5 rounded-2xl shadow-md text-2xl hover:bg-button-hover transition duration-300 cursor-pointer">History</button></Link>
       </div>

@@ -54,38 +54,38 @@ const History = () => {
   }, [])
 
   return (
-    <div className="flex h-screen bg-black text-white p-6 relative">
+    <div className="flex h-screen bg-gray-900 text-white p-6 relative">
       
       {/* Close Button (Top Left) */}
       <button 
-        className="absolute top-4 left-4 text-gray-300 hover:text-gray-500"
+        className="cursor-pointer absolute top-4 left-4 text-gray-300 hover:text-gray-500"
         onClick={() => navigate("/")}
       >
         <X size={32} />
       </button>
 
       {/* Sidebar - Past Simulations */}
-      <div className="w-1/3 bg-gray-900 p-6 rounded-lg shadow-lg">
+      <div className="w-1/3 bg-gray-800 p-6 rounded-lg shadow-lg">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold">Past Simulations</h2>
           
           {/* Sorting Button */}
           <div className="relative">
             <button 
-              className="bg-gray-700 text-white px-3 py-2 rounded flex items-center gap-2" 
+              className="bg-gray-700 text-white px-3 py-2 rounded flex items-center gap-2 cursor-pointer" 
               onClick={() => setIsSortMenuOpen(!isSortMenuOpen)}
             >
               <Filter size={20} /> Sort
             </button>
             {isSortMenuOpen && (
               <div className="absolute right-0 bg-gray-800 text-white shadow-lg rounded mt-1">
-                <button className="block w-full px-4 py-2 text-left hover:bg-gray-600" onClick={() => sortSimulations("score")}>
+                <button className="block w-full px-4 py-2 text-left hover:bg-gray-600 cursor-pointer" onClick={() => sortSimulations("score")}>
                   Overall Score
                 </button>
-                <button className="block w-full px-4 py-2 text-left hover:bg-gray-600" onClick={() => sortSimulations("date")}>
+                <button className="block w-full px-4 py-2 text-left hover:bg-gray-600 cursor-pointer" onClick={() => sortSimulations("date")}>
                   Date Created
                 </button>
-                <button className="block w-full px-4 py-2 text-left hover:bg-gray-600" onClick={() => sortSimulations("name")}>
+                <button className="block w-full px-4 py-2 text-left hover:bg-gray-600 cursor-pointer" onClick={() => sortSimulations("name")}>
                   Alphabetic Order
                 </button>
               </div>

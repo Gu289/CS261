@@ -6,13 +6,24 @@ const InputMenu = ({ inboundDirection, directions, handleTrafficChange, trafficD
 
   const inboundCapitalize = inboundDirection.charAt(0).toUpperCase() + inboundDirection.slice(1)
 
-  const [showError, setShowError] = useState(false)
+  const [logicError, setLogicError] = useState(false)
+  const [digitsError, setDigitsError] = useState(false)
 
   useEffect(() => {
     const { inbound, ...outbounds } = trafficData[inboundDirection]
     const totalOut = Object.values(outbounds).reduce((sum, val) => sum + val, 0);
 
-    setShowError(inbound < totalOut);
+    setLogicError(inbound !== totalOut);
+    const { dir1, dir2, dir3 } = outbounds
+
+    if(inbound > 2000 || dir1 > 2000 || dir2 > 2000 || dir3 > 2000){
+      setDigitsError(true)
+    } else{
+      setDigitsError(false)
+    }
+
+
+      
 }, [trafficData, inboundDirection, directions])
 
   return (
@@ -21,14 +32,15 @@ const InputMenu = ({ inboundDirection, directions, handleTrafficChange, trafficD
             <h1 className="text-2xl" >{inboundCapitalize} Traffic</h1>
         </div>
             <div className="flex flex-col justify-center bg-primary rounded-lg shadow-md p-3">
-            <InboundItem direction={inboundDirection} trafficData={trafficData} handleTrafficChange={handleTrafficChange}/>
+            <InboundItem direction={inboundDirection} trafficData={trafficData} handleTrafficChange={handleTrafficChange} digitsError={digitsError}/>
             {/* make input items for each outbound directions  */}
             {directions.map((direction, index) => direction != inboundDirection && (
-                <OutboundItem key={index} direction={direction} inboundDirection={inboundDirection} trafficData={trafficData} handleTrafficChange={handleTrafficChange} />
+                <OutboundItem key={index} direction={direction} inboundDirection={inboundDirection} trafficData={trafficData} handleTrafficChange={handleTrafficChange} digitsError={digitsError}/>
             )
             )}
         </div>
-        {showError && <p className="text-center mt-2 text-red-500">Outbound values cannot exceed Inbound values</p>}
+        {logicError && <p className="text-center mt-2 text-red-500">Outbound values must be equal to Inbound values</p>}
+        {digitsError && <p className="text-center mt-2 text-red-500">Values cannot exceed 2000vph</p>}
     </div>
   )
 }
