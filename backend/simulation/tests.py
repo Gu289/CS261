@@ -7,8 +7,7 @@ from .junction_classes import SimulationResults, Junction, Direction
 
 class SimulationEngineTest(TestCase):
     def setUp(self):
-        # Create a dummy Simulation instance with a junction_config.
-        # Adjust the fields as appropriate for your Simulation model.
+        # Create a dummy Simulation instance with a junction_config..
         self.simulation = Simulation.objects.create(
             simulation_status="not_started",
             junction_config={
@@ -48,7 +47,6 @@ class SimulationEngineTest(TestCase):
         """
         Test that vehicles are created, enqueued and processed during the simulation.
         """
-        # Clear any pre-existing queues (if necessary)
         Queue.objects.all().delete()
 
         # Create a minimal junction configuration.
