@@ -3,7 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from .models import Simulation
 from .serializers import SimulationSerializer
 from django.middleware.csrf import get_token
-
+from .simulation_engine import SimulationEngine
 import json
 
 def get_csrf_token(request):
@@ -69,6 +69,16 @@ def start_simulation(request):
         return JsonResponse({"Error": "Simulation already running or completed"},status=400)
 
     # TODO: Start simulation with the parameters and returns a boolean, true if successful, false otherwise
+    # Call the simulation engine to run the simulation.
+    engine = SimulationEngine(simulation=simulation, time_step=1)
+    results = engine.run_simulation(simulation_duration=60)
+
+    # Update the simulation with the returned results.
+    simulation.simulation_status = "completed"
+    simulation.avg_wait_time = results.get("average_wait_time")
+    simulation.max_queue_length = results.get("max_queue_length")
+    simulation.save()
+    
     is_successful = True
 
     junction_config = simulation.junction_config
