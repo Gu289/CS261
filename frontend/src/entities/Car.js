@@ -3,15 +3,13 @@ export default class Car{
         this.x = x;
         this.y = y;
         this.img = image;
-        // if(image){
-        //     this.img.src = image
-        // }
         this.width = 50;
         this.height = 20;
     }
 
     move(){
         this.y += 1;
+        this.x += 2;
     }
 
     draw(ctx){
