@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import grassSrc from "../assets/backgroundGrass.jpg"
 import carSrc from "../assets/carSmall2.png"
 import road1lanesWithSrc from "../assets/road1lanesCropWith.png"
+import Car from '../entities/Car'
 
 const Simulation = () => {
 
@@ -22,10 +23,8 @@ const Simulation = () => {
     })
   }
 
-  
 
   useEffect(() => {
-
     // load the images
     Promise.all([loadImages(carSrc), 
       loadImages(road1lanesWithSrc),
@@ -37,30 +36,34 @@ const Simulation = () => {
         setGrassImage(loadedGrassImg);
       }
     )
+  }, [])
+
+  useEffect(() => {
+
+    
 
     // initialize background layer
     const bg = bgCanvasRef.current;
-    const ctx = bg.getContext("2d");
+    const bgCtx = bg.getContext("2d");
 
     // // initialize front layer for cars
-    // const front = frontCanvasRef.current;
-    // const frontCtx = bg.getContext("2d");
+    const front = frontCanvasRef.current;
+    const frontCtx = bg.getContext("2d");
 
     // draws the background grass once 
     const drawGrass = () => {
       if(grassImage){
-        ctx.drawImage(grassImage, 0, 0, bg.width, bg.height)
-      } else{
-        console.log("Grass image is not loaded yet")
-      }
+        bgCtx.drawImage(grassImage, 0, 0, bg.width, bg.height)
+      } 
     }
+
 
     // main function that animates the canvas
     const animate = () => {
-      ctx.clearRect(0, 0, bg.width, bg.height);
+      frontCtx.clearRect(0, 0, front.width, front.height);
 
       // will be moved out and called only once when component is mounted and attached only to background canvas so clearRect will not clear it
-      drawGrass();
+      
 
       
       if(road1WithImage){
@@ -74,10 +77,15 @@ const Simulation = () => {
         const x = (bg.width - newWidth) / 2;
         const y = (bg.height - newHeight)
 
-        ctx.drawImage(road1WithImage, x, y, newWidth, newHeight);
+        frontCtx.drawImage(road1WithImage, x, y, newWidth, newHeight);
       }
 
-      requestAnimationFrame(animate);
+      if(carRef.current){
+        carRef.current.move();
+        carRef.current.draw(frontCtx);
+      }
+
+      animationFrameRef.current = requestAnimationFrame(animate);
     }
 
     animate();
@@ -111,14 +119,16 @@ const Simulation = () => {
 
     //   drawTop(vertices)
     // }
-    
-  }, [carImage, road1WithImage, grassImage])
+    return () => {
+      cancelAnimationFrame(animationFrameRef.current);
+    };
+  }, [])
 
   return (
     <div className="col-span-2 relative bg-gray-100 overflow-y-hidden p-5">
       <div className="p-5 relative w-full h-full">
-        <canvas ref={bgCanvasRef} id="background-layer" className="absolute top-0 left-0 w-full h-full border" width={window.innerWidth} height={window.innerHeight}></canvas>
         <canvas ref={frontCanvasRef} id="vehicles-layer" className="absolute top-0 left-0 w-full h-full border" width={window.innerWidth} height={window.innerHeight}></canvas>
+        <canvas ref={bgCanvasRef} id="background-layer" className="absolute top-0 left-0 w-full h-full border" width={window.innerWidth} height={window.innerHeight}></canvas>
       </div>
     </div>
   )
