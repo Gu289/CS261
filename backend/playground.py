@@ -1,8 +1,20 @@
 import queue
-import threading
 import time
+import threading
 import numpy as np
 from queue import Queue
+import os
+import django
+
+
+# Set up Django settings
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "traffic_sim.settings")
+
+# Initialize Django
+django.setup()
+
+from simulation.models import Vehicle
+from django.utils import timezone
 
 # Global variables
 south_incoming = Queue()
@@ -68,8 +80,8 @@ class TrafficLight:
     def switch_state(self):
         with self.lock:
             self.NS_traffic, self.EW_traffic = self.EW_traffic, self.NS_traffic
-            print(f"[north-south Traffic Light] {self.NS_traffic}")
-            print(f"[east-west Traffic Light] {self.EW_traffic}")
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: north-south Traffic Light] {self.NS_traffic}")
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: east-west Traffic Light] {self.EW_traffic}")
 
     def is_green(self, direction:str):
         with self.lock:
@@ -85,9 +97,25 @@ class TrafficLight:
 
     def start(self):
         threading.Thread(target=self.operation, daemon=True).start()  
-        print("A thread for a traffic light has started.")
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: Traffic Light] A thread for a traffic light has started.")
 
-def vehicleBuilder(lane, incoming_direction, junction_config):
+def vehicleBuilder(lane:int, incoming_direction:str, junction_config:dict) -> Vehicle:
+    """
+    Creates and persists a Vehicle instance based on the provided lane, incoming direction, and junction configuration.
+    Parameters:
+        lane (int): The lane number from which the vehicle originates.
+        incoming_direction (str): The key representing the incoming direction in the junction configuration.
+        junction_config (dict): A dictionary containing sub-dictionaries for each direction. Each sub-dictionary 
+                                should have an inbound value (first value) followed by exit rates for the available exit directions.
+    Returns:
+        Vehicle: The created and saved Vehicle instance with the assigned incoming direction, computed exit direction, and lane.
+    Notes:
+        The function retrieves the inbound flow and exit rates from the junction configuration for the specified incoming direction.
+        It then normalizes the exit rates relative to the inbound value to compute a probability distribution.
+        Using a random number generator, it selects one of the exit directions according to the computed probabilities and creates
+        a Vehicle instance accordingly.
+    """
+
     inbound, *exit_rates = junction_config[incoming_direction].values()
     _, *exit_directions = junction_config[incoming_direction].keys()
     exit_dist = list(np.array(exit_rates)/inbound)
@@ -96,11 +124,14 @@ def vehicleBuilder(lane, incoming_direction, junction_config):
     exit_direction = rng.choice(exit_directions, p=exit_dist)
 
     vehicle = {
-        "type": "car",
         "incoming_direction": incoming_direction,
         "exit_direction": exit_direction,
         "lane": lane
     }
+
+    vehicle = Vehicle.objects.create(**vehicle)
+    vehicle.save()
+
     return vehicle
 
 class Enqueuer:
@@ -122,20 +153,22 @@ class Enqueuer:
             rate = 1/VPS
             
             random_delay = rng.exponential(rate)
-            print(f"[{direction} traffic] A new vehicle is arriving in {round(random_delay, 2)}s")
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {direction} traffic] A new vehicle is arriving in {round(random_delay, 2)}s")
             time.sleep(random_delay)
 
             vehicle = vehicleBuilder(random_lane, direction, self.junction_config)
 
             with self.lock:
                 self.traffic_dict[direction]["incoming"][random_lane].put(vehicle)
+                vehicle.arrival_time = timezone.now()
+                vehicle.save()
 
-            print(f"[{direction} traffic, lane {random_lane}] A new vehicle reached the junction.")
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {direction} traffic, lane {random_lane}] A new vehicle reached the junction.")
 
     def start(self):
         for direction in self.traffic_dict:
             threading.Thread(target=self.enqueue_vehicles, args=(direction,), daemon=True).start()
-            print(f"[{direction} traffic ] A thread for incoming traffic has stared.")
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {direction} traffic ] A thread for enqueueing traffic has stared.")
 
 
 class Dequeuer:
@@ -146,28 +179,33 @@ class Dequeuer:
         self.lock = threading.Lock()
         self.CROSSING_TIME = crossing_time
 
-    def dequeue_vehicles(self):
+    def dequeue_vehicles(self, dir):
         while not stop_event.is_set():
             time.sleep(self.CROSSING_TIME) 
 
-            for dir in self.traffic_dict:
-                if self.traffic_light.is_green(dir):
-                    for index,lane in enumerate(self.traffic_dict[dir]["incoming"]):
-                        if not lane.empty():
-                            with self.lock:
-                                item = lane.get()
-                                type, incoming_dir, exit_dir, _ = item.values()
-                                self.traffic_dict[exit_dir]["exiting"][index].put(item)
-                            print(f"Vehicle from {incoming_dir} exited to {exit_dir}")
-                        else:
-                            print(f"[{dir} traffic] Lane {index} is empty.")
-                else:
-                    q = [lane.qsize() for lane in self.traffic_dict[dir]["incoming"]]
-                    print(f"[{dir} traffic] Traffic light is red, current queue length: {q}")
+            if self.traffic_light.is_green(dir):
+                for index,lane in enumerate(self.traffic_dict[dir]["incoming"]):
+                    if not lane.empty():
+                        with self.lock:
+                            vehicle = lane.get()
+                            incoming_dir = vehicle.incoming_direction
+                            exit_dir = vehicle.exit_direction
+                            self.traffic_dict[exit_dir]["exiting"][index].put(vehicle)
+                            vehicle.departure_time = timezone.now()
+                            vehicle.save()
+
+                        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')}: Vehicle from {incoming_dir} exited to {exit_dir}")
+                    else:
+                        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {dir} traffic] Lane {index} is empty.")
+            else:
+                q = [lane.qsize() for lane in self.traffic_dict[dir]["incoming"]]
+                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {dir} traffic] Traffic light is red, current queue length: {q}")
 
     def start(self):
-        threading.Thread(target=self.dequeue_vehicles, daemon=True).start()
-        print("A thread for dequeuing vehicles has started.")
+        for direction in self.traffic_dict:
+            threading.Thread(target=self.dequeue_vehicles, daemon=True, args=(direction,)).start()
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {direction} traffic ] A thread for dequeuing traffic has stared.")
+
 
 traffic_light = TrafficLight()
 enqueuer = Enqueuer(traffic_dict, junction_config)
