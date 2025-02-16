@@ -1,9 +1,43 @@
 from django.utils import timezone
-from .models import Simulation, Queue, Vehicle
-from .junction_classes import Junction, Direction, SimulationResults
+from .junction_classes import Junction, Vehicle, SimulationResults, VehiclesWarehouse
+import random
+import numpy as np
+
+
 
 class SimulationEngine:
-    def __init__(self, simulation, simulationTime, timeStep):
+    '''
+    junction_config = {
+    "north": {
+        "inbound": 0,
+        "east": 0,
+        "south": 0,
+        "west": 0
+    },
+    "east": {
+        "inbound": 0,
+        "north": 0,
+        "south": 0,
+        "west": 0
+    },
+    "south": {
+        "inbound": 0,
+        "north": 0,
+        "east": 0,
+        "west": 0
+    },
+    "west": {
+        "inbound": 0,
+        "north": 0,
+        "east": 0,
+        "south": 0
+    },
+    "leftTurn": False,
+    "numLanes": 2
+    }
+    '''
+
+    def __init__(self, simulation, simulationTime, timeStep, junction_config):
         """
         Initialize the simulation engine.
 
@@ -17,27 +51,31 @@ class SimulationEngine:
         self.simulation = simulation
         self.simulationTime = simulationTime
         self.timeStep = timeStep
+        self.junction_config = junction_config
 
-        # For backwards compatibility, continue using the default queue.
-        self.queue, _ = Queue.objects.get_or_create(id=1, defaults={'max_size': 10})
+        self.junction = Junction(junction_config)
+        self.VehiclesWarehouse = VehiclesWarehouse(junction_config)
+
+        # # For backwards compatibility, continue using the default queue.
+        # self.queue, _ = Queue.objects.get_or_create(id=1, defaults={'max_size': 10})
         
-        # Create Junction from simulation configuration.
-        directions_config = self.simulation.junction_config.get("directions", [])
-        directions = []
-        for d_conf in directions_config:
-            direction_obj = Direction(
-                direction_name=d_conf.get("name"),
-                incoming_flow_rate=d_conf.get("incoming_flow_rate", 0),
-                lane_count=d_conf.get("lane_count", 1),
-                exit_distribution=d_conf.get("exit_distribution", {})
-            )
-            directions.append(direction_obj)
-        # Create default directions if none provided.
-        if not directions:
-            default_names = ["north", "east", "south", "west"]
-            directions = [Direction(direction_name=name) for name in default_names]
-        self.junction = Junction(directions)
-        self.results = None
+        # # Create Junction from simulation configuration.
+        # directions_config = self.simulation.junction_config.get("directions", [])
+        # directions = []
+        # for d_conf in directions_config:
+        #     direction_obj = Direction(
+        #         direction_name=d_conf.get("name"),
+        #         incoming_flow_rate=d_conf.get("incoming_flow_rate", 0),
+        #         lane_count=d_conf.get("lane_count", 1),
+        #         exit_distribution=d_conf.get("exit_distribution", {})
+        #     )
+        #     directions.append(direction_obj)
+        # # Create default directions if none provided.
+        # if not directions:
+        #     default_names = ["north", "east", "south", "west"]
+        #     directions = [Direction(direction_name=name) for name in default_names]
+        # self.junction = Junction(directions)
+        # self.results = None
 
     def runSimulation(self):
         """

@@ -72,9 +72,10 @@ class Vehicle(models.Model):
     # AutoField 'id' is added by default as the primary key.
     arrival_time = models.DateTimeField(null=True, blank=True)
     departure_time = models.DateTimeField(null=True, blank=True)
-    # Establish a ForeignKey relationship; a vehicle belongs to one queue (nullable in case it's not enqueued).
-    queue = models.ForeignKey(Queue, on_delete=models.SET_NULL, null=True, blank=True)
+    incoming_direction = models.CharField(max_length=50, blank=False)
+    exit_direction = models.CharField(max_length=50, blank=False)
+    lane = models.IntegerField(blank=False)
 
 
     def __str__(self):
-        return f"Vehicle {self.id} car - Arrived: {self.arrival_time}, Departed: {self.departure_time}"
+        return f"Vehicle {self.id} - Arrived: {self.arrival_time}, Departed: {self.departure_time}"
