@@ -5,6 +5,7 @@ import numpy as np
 from queue import Queue
 import os
 import django
+import random
 
 
 # Set up Django settings
@@ -209,6 +210,70 @@ class Dequeuer:
             threading.Thread(target=self.dequeue_vehicles, daemon=True, args=(direction,)).start()
             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {direction} traffic ] A thread for dequeuing traffic has stared.")
 
+class VehiclesWarehouse:
+    
+    def __init__(self, junction_config, num_vehicle=50):
+        self.warehouse = {
+            "north": [],
+            "east": [], 
+            "south": [],
+            "west": []
+        }
+        self.junction_config = junction_config
+        self.num_vehicle = num_vehicle
+
+        for d in self.warehouse:
+            self.warehouse[d] = self.generateVehicles(junction_config, d)
+    
+    def generateVehicles(self, junction_config, incoming_direction):
+        """
+        Generate a list of Vehicle objects based on junction configuration data.
+        Args:
+            junction_config (dict): Dictionary containing junction configuration with flow rates and lane information.
+            incoming_direction (str): The direction from which vehicles are entering the junction.
+        Returns:
+            list: A shuffled list of Vehicle objects generated according to the flow rates relative to the inbound flow.
+        """
+        n = self.num_vehicle # Number of vehicles to generate
+
+        vehicles = []
+        incoming_flow_rate = junction_config[incoming_direction]["inbound"]
+        lane_count = junction_config["numLanes"]
+        exit_flow_rates = junction_config[incoming_direction]
+
+
+        for d,v in enumerate(exit_flow_rates):
+            if d == "inbound": continue # Skip the inbound direction
+            
+            n = round(n*(v/incoming_flow_rate)) # Number of vehicles exiting at this direction
+            lane = random.randint(0, lane_count - 1)
+            for i in range(n):
+                vehicles.append(Vehicle(incoming_direction, lane, d))
+
+        vehicles = list(np.random.permutation(vehicles))
+
+        return vehicles
+    
+    def get_vehicle(self, direction):
+        """
+        Retrieves a vehicle from the warehouse for the given direction.
+
+        If a vehicle is available in the warehouse for the specified direction, it removes and returns it.
+        Otherwise, the warehouse is replenished with new vehicles based on the junction configuration,
+        and the function returns None.
+        Args:
+            direction: The key indicating which directional lane or queue in the warehouse to access.
+        Returns:
+            The first vehicle from the warehouse if available; otherwise, None.
+        """
+        if not self.warehouse[direction]:
+            raise ValueError("No vehicle available in the warehouse.")
+
+        return self.warehouse[direction].pop(0)
+    
+    def is_empty(self, direction):
+        return not bool(self.warehouse[direction])
+
 
 traffic_light = TrafficLight()
 enqueuer = Enqueuer(traffic_dict, junction_config)
@@ -219,7 +284,7 @@ dequeuer.start()
 traffic_light.start()
 
 
-duration = 20  # seconds
+duration = 20 # seconds
 start_time = time.time()
 
 while time.time() - start_time < duration:
