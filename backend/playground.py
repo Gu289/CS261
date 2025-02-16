@@ -100,46 +100,12 @@ class TrafficLight:
         threading.Thread(target=self.operation, daemon=True).start()  
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: Traffic Light] A thread for a traffic light has started.")
 
-def vehicleBuilder(lane:int, incoming_direction:str, junction_config:dict) -> Vehicle:
-    """
-    Creates and persists a Vehicle instance based on the provided lane, incoming direction, and junction configuration.
-    Parameters:
-        lane (int): The lane number from which the vehicle originates.
-        incoming_direction (str): The key representing the incoming direction in the junction configuration.
-        junction_config (dict): A dictionary containing sub-dictionaries for each direction. Each sub-dictionary 
-                                should have an inbound value (first value) followed by exit rates for the available exit directions.
-    Returns:
-        Vehicle: The created and saved Vehicle instance with the assigned incoming direction, computed exit direction, and lane.
-    Notes:
-        The function retrieves the inbound flow and exit rates from the junction configuration for the specified incoming direction.
-        It then normalizes the exit rates relative to the inbound value to compute a probability distribution.
-        Using a random number generator, it selects one of the exit directions according to the computed probabilities and creates
-        a Vehicle instance accordingly.
-    """
-
-    inbound, *exit_rates = junction_config[incoming_direction].values()
-    _, *exit_directions = junction_config[incoming_direction].keys()
-    exit_dist = list(np.array(exit_rates)/inbound)
-
-    rng = np.random.default_rng()
-    exit_direction = rng.choice(exit_directions, p=exit_dist)
-
-    vehicle = {
-        "incoming_direction": incoming_direction,
-        "exit_direction": exit_direction,
-        "lane": lane
-    }
-
-    vehicle = Vehicle.objects.create(**vehicle)
-    vehicle.save()
-
-    return vehicle
-
 class Enqueuer:
-    def __init__(self, traffic_dict, junction_config=junction_config):
+    def __init__(self, traffic_dict, vehicle_warehouse, junction_config=junction_config):
         self.traffic_dict = traffic_dict
         self.junction_config = junction_config
         self.lock = threading.Lock()
+        self.vehicle_warehouse = vehicle_warehouse
 
     def enqueue_vehicles(self, direction):
         while not stop_event.is_set():
@@ -151,20 +117,19 @@ class Enqueuer:
             # print(f"[{direction} traffic]: {VPH} vehicles per second")
 
             VPS = VPH / 3600  # Vehicles per second
-            rate = 1/VPS
-            
-            random_delay = rng.exponential(rate)
-            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {direction} traffic] A new vehicle is arriving in {round(random_delay, 2)}s")
-            time.sleep(random_delay)
+            SPV = 1/VPS # Seconds per vehicle
 
-            vehicle = vehicleBuilder(random_lane, direction, self.junction_config)
+            time.sleep(SPV)
 
             with self.lock:
+                vehicle = self.vehicle_warehouse.get_vehicle(direction)
                 self.traffic_dict[direction]["incoming"][random_lane].put(vehicle)
                 vehicle.arrival_time = timezone.now()
                 vehicle.save()
 
             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {direction} traffic, lane {random_lane}] A new vehicle reached the junction.")
+        
+        # stop_event.set()
 
     def start(self):
         for direction in self.traffic_dict:
@@ -223,9 +188,31 @@ class VehiclesWarehouse:
         self.num_vehicle = num_vehicle
 
         for d in self.warehouse:
-            self.warehouse[d] = self.generateVehicles(junction_config, d)
+            self.warehouse[d] = self.generateVehicles(d)
+
+    def vehicleBuilder(self, incoming_direction:str) -> Vehicle:
+        inbound, *exit_rates = self.junction_config[incoming_direction].values()
+        _, *exit_directions = self.junction_config[incoming_direction].keys()
+        exit_dist = list(np.array(exit_rates)/inbound)
+
+        rng = np.random.default_rng()
+        exit_direction = rng.choice(exit_directions, p=exit_dist)
+
+        lane_count = junction_config["numLanes"]
+        random_lane = random.randint(0,  lane_count - 1)
+
+        vehicle = {
+            "incoming_direction": incoming_direction,
+            "exit_direction": exit_direction,
+            "lane": random_lane
+        }
+
+        vehicle = Vehicle.objects.create(**vehicle)
+        vehicle.save()
+
+        return vehicle
     
-    def generateVehicles(self, junction_config, incoming_direction):
+    def generateVehicles(self, incoming_direction):
         """
         Generate a list of Vehicle objects based on junction configuration data.
         Args:
@@ -234,21 +221,16 @@ class VehiclesWarehouse:
         Returns:
             list: A shuffled list of Vehicle objects generated according to the flow rates relative to the inbound flow.
         """
-        n = self.num_vehicle # Number of vehicles to generate
-
         vehicles = []
-        incoming_flow_rate = junction_config[incoming_direction]["inbound"]
-        lane_count = junction_config["numLanes"]
-        exit_flow_rates = junction_config[incoming_direction]
+        incoming_flow_rate = self.junction_config[incoming_direction]["inbound"]
+        exit_flow_rates = self.junction_config[incoming_direction]
 
-
-        for d,v in enumerate(exit_flow_rates):
+        for d,v in exit_flow_rates.items():
             if d == "inbound": continue # Skip the inbound direction
-            
-            n = round(n*(v/incoming_flow_rate)) # Number of vehicles exiting at this direction
-            lane = random.randint(0, lane_count - 1)
+
+            n = round(self.num_vehicle*(v/incoming_flow_rate)) # Number of vehicles exiting at this direction            
             for i in range(n):
-                vehicles.append(Vehicle(incoming_direction, lane, d))
+                vehicles.append(self.vehicleBuilder(incoming_direction))
 
         vehicles = list(np.random.permutation(vehicles))
 
@@ -274,22 +256,14 @@ class VehiclesWarehouse:
     def is_empty(self, direction):
         return not bool(self.warehouse[direction])
 
-
+vehicle_warehouse = VehiclesWarehouse(junction_config)
 traffic_light = TrafficLight()
-enqueuer = Enqueuer(traffic_dict, junction_config)
+enqueuer = Enqueuer(traffic_dict, vehicle_warehouse, junction_config)
 dequeuer = Dequeuer(traffic_dict, junction_config, traffic_light)
+
 
 enqueuer.start()
 dequeuer.start()
 traffic_light.start()
-
-
-duration = 20 # seconds
-start_time = time.time()
-
-while time.time() - start_time < duration:
-    time.sleep(1)
-
-stop_event.set()
 
 print("Simulation completed.")
