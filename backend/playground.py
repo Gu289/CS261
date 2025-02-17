@@ -201,12 +201,12 @@ class Dequeuer:
                         exit_dir = vehicle.exit_direction
                         
                         with self.locks_dict[exit_dir]["exiting"][index]:
+                            time.sleep(self.CROSSING_TIME) 
                             self.traffic_dict[exit_dir]["exiting"][index].put(vehicle)
                             vehicle.departure_time = timezone.now()
                             vehicle.save()
+                            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')}: Vehicle from {incoming_dir} exited to {exit_dir}")
 
-                        time.sleep(self.CROSSING_TIME) 
-                        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')}: Vehicle from {incoming_dir} exited to {exit_dir}")
                     else:
                         new_q_size = [lane.qsize() for lane in self.traffic_dict[dir]["incoming"]]
                         if new_q_size != old_q_size:
