@@ -17,8 +17,6 @@ from simulation.models import Vehicle
 from django.utils import timezone
 
 # Global variables
-south_incoming = Queue()
-north_exiting = Queue()
 n = 2  # Number of lanes
 stop_event = threading.Event()
 
@@ -68,6 +66,14 @@ traffic_dict = {
         "incoming": [Queue() for _ in range(n)],
         "exiting": [Queue() for _ in range(n)]
     }
+}
+
+locks_dict = {
+    direction: {
+        key: [threading.Lock() for _ in range(n)]
+        for key in ["incoming", "exiting"]
+    }
+    for direction in traffic_dict
 }
 
 class TrafficLight:
@@ -135,10 +141,10 @@ def vehicleBuilder(lane:int, incoming_direction:str, junction_config:dict) -> Ve
     return vehicle
 
 class Enqueuer:
-    def __init__(self, traffic_dict, junction_config=junction_config):
+    def __init__(self, traffic_dict, locks_dict, junction_config=junction_config):
         self.traffic_dict = traffic_dict
         self.junction_config = junction_config
-        self.lock = threading.Lock()
+        self.locks_dict = locks_dict
 
     def enqueue_vehicles(self, direction):
         while not stop_event.is_set():
@@ -158,7 +164,7 @@ class Enqueuer:
 
             vehicle = vehicleBuilder(random_lane, direction, self.junction_config)
 
-            with self.lock:
+            with self.locks_dict[direction]["incoming"][random_lane]:
                 self.traffic_dict[direction]["incoming"][random_lane].put(vehicle)
                 vehicle.arrival_time = timezone.now()
                 vehicle.save()
@@ -172,11 +178,12 @@ class Enqueuer:
 
 
 class Dequeuer:
-    def __init__(self, traffic_dict, junction_config, traffic_light, crossing_time=0.5):
+    def __init__(self, traffic_dict, locks_dict, junction_config, traffic_light, crossing_time=0.5):
         self.traffic_dict = traffic_dict
         self.junction_config = junction_config
         self.traffic_light = traffic_light
-        self.lock = threading.Lock()
+        self.locks_dict = locks_dict
+        
         self.CROSSING_TIME = crossing_time
 
     def dequeue_vehicles(self, dir):
@@ -184,17 +191,19 @@ class Dequeuer:
         while not stop_event.is_set():
             for index,lane in enumerate(self.traffic_dict[dir]["incoming"]):
                 if not lane.empty():
-                    self.lock.acquire()  # Peek at the first vehicle in the queue
-                    vehicle = lane.queue[0]
+                    self.locks_dict[dir]["incoming"][index].acquire()  
+                    vehicle = lane.queue[0] # Peek at the first vehicle in the queue
                     if self.traffic_light.is_green(vehicle.exit_direction):
                         vehicle = lane.get()
+                        self.locks_dict[dir]["incoming"][index].release() 
+
                         incoming_dir = vehicle.incoming_direction
                         exit_dir = vehicle.exit_direction
                         
-                        self.traffic_dict[exit_dir]["exiting"][index].put(vehicle)
-                        vehicle.departure_time = timezone.now()
-                        vehicle.save()
-                        self.lock.release()
+                        with self.locks_dict[exit_dir]["exiting"][index]:
+                            self.traffic_dict[exit_dir]["exiting"][index].put(vehicle)
+                            vehicle.departure_time = timezone.now()
+                            vehicle.save()
 
                         time.sleep(self.CROSSING_TIME) 
                         print(f"{time.strftime('%Y-%m-%d %H:%M:%S')}: Vehicle from {incoming_dir} exited to {exit_dir}")
@@ -203,7 +212,7 @@ class Dequeuer:
                         if new_q_size != old_q_size:
                             old_q_size = new_q_size
                             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {dir} traffic] Traffic light is red, current queue length: {new_q_size}")
-                        self.lock.release()
+                        self.locks_dict[dir]["incoming"][index].release() 
 
     def start(self):
         for direction in self.traffic_dict:
@@ -212,8 +221,8 @@ class Dequeuer:
 
 
 traffic_light = TrafficLight()
-enqueuer = Enqueuer(traffic_dict, junction_config)
-dequeuer = Dequeuer(traffic_dict, junction_config, traffic_light)
+enqueuer = Enqueuer(traffic_dict, locks_dict, junction_config)
+dequeuer = Dequeuer(traffic_dict, locks_dict, junction_config, traffic_light)
 
 enqueuer.start()
 dequeuer.start()
