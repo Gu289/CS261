@@ -129,7 +129,9 @@ class Enqueuer:
 
             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {direction} traffic, lane {random_lane}] A new vehicle reached the junction.")
         
-        # stop_event.set()
+        if self.vehicle_warehouse.is_abs_empty():
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] No more vehicles in the warehouse. Stopping the simulation.")
+            stop_event.set()
 
     def start(self):
         for direction in self.traffic_dict:
@@ -145,6 +147,7 @@ class Dequeuer:
         self.lock = threading.Lock()
         self.CROSSING_TIME = crossing_time
 
+    # TODO: fix the logic, make sure the vehicle is dequeued when the exit direction's traffic light is green
     def dequeue_vehicles(self, dir):
         old_q_size = [lane.qsize() for lane in self.traffic_dict[dir]["incoming"]]
         while not stop_event.is_set():
@@ -186,6 +189,7 @@ class VehiclesWarehouse:
         }
         self.junction_config = junction_config
         self.num_vehicle = num_vehicle
+        self.lock = threading.Lock()
 
         for d in self.warehouse:
             self.warehouse[d] = self.generateVehicles(d)
@@ -254,9 +258,14 @@ class VehiclesWarehouse:
         return self.warehouse[direction].pop(0)
     
     def is_empty(self, direction):
-        return not bool(self.warehouse[direction])
+        with self.lock:
+            return not bool(self.warehouse[direction])
+        
+    def is_abs_empty(self):
+        with self.lock:
+            return all([not bool(self.warehouse[d]) for d in self.warehouse])
 
-vehicle_warehouse = VehiclesWarehouse(junction_config)
+vehicle_warehouse = VehiclesWarehouse(junction_config, 10)
 traffic_light = TrafficLight()
 enqueuer = Enqueuer(traffic_dict, vehicle_warehouse, junction_config)
 dequeuer = Dequeuer(traffic_dict, junction_config, traffic_light)
@@ -266,4 +275,9 @@ enqueuer.start()
 dequeuer.start()
 traffic_light.start()
 
-print("Simulation completed.")
+try:
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    stop_event.set()
+    print("Simulation stopped.")
