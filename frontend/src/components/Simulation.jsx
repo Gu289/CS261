@@ -1,10 +1,15 @@
 import { useRef, useEffect } from 'react'
-import grassSrc from "../assets/backgroundGrass.jpg"
-import carSrc from "../assets/carSmall2.png"
+import grassSrc from "../assets/junction1.png"
+import carSrc from "../assets/car1.png"
 import road1lanesWithSrc from "../assets/road1lanesCropWith.png"
 import Car from '../entities/Car'
 
 const Simulation = () => {
+
+  // Top = W/2, 0
+  // Bottom = W/2, H
+  // Left = 0, H/2
+  // Right = W, H/2
 
   const animationFrameRef = useRef(null);
   const carRef = useRef([]);
@@ -36,6 +41,7 @@ const Simulation = () => {
 
   // updates car positions etc
   const updateState = () => {
+    
     if(carRef.current){
       carRef.current.forEach((car) => {
         car.move()
@@ -68,9 +74,12 @@ const Simulation = () => {
         const backgroundCtx = backgroundRef.current.getContext("2d");
         const frontCtx = frontRef.current.getContext("2d");
 
-        carRef.current.push(new Car(100, 100, carImageRef.current));
-        carRef.current.push(new Car(0, 0, carImageRef. current));
+        carRef.current.push(new Car(frontRef.current.width / 2 + 20, 0, carImageRef.current));
         
+        // const spawnInterval = setInterval(() => {
+        //   carRef.current.push(new Car(frontRef.current.width / 2 + 20, 0, carImageRef.current));
+        // }, 1000);
+
         // background drawn only once when component is mounted
         backgroundCtx.drawImage(grassImageRef.current, 0, 0, backgroundRef.current.width, backgroundRef.current.height);
         
