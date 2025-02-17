@@ -212,8 +212,6 @@ class VehiclesWarehouse:
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Warehouse has been stocked with vehicles.")
 
     def vehicleBuilder(self, incoming_direction:str, exit_direction:str) -> Vehicle:
-        inbound, *exit_rates = self.junction_config[incoming_direction].values()
-
         lane_count = junction_config["numLanes"]
         random_lane = random.randint(0,  lane_count - 1)
 
