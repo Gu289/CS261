@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import grassSrc from "../assets/junction1.png"
 import carSrc from "../assets/car1.png"
 import road1lanesWithSrc from "../assets/road1lanesCropWith.png"
@@ -10,6 +10,9 @@ const Simulation = () => {
   // Bottom = W/2, H
   // Left = 0, H/2
   // Right = W, H/2
+
+  const [x, setX] = useState(0);
+  const [y, setY] = useState(0);
 
   const animationFrameRef = useRef(null);
   const carRef = useRef([]);
@@ -44,7 +47,13 @@ const Simulation = () => {
     
     if(carRef.current){
       carRef.current.forEach((car) => {
-        car.move()
+        // car.move()
+        if(car.speed != 0){
+          car.move();
+        } else{
+          console.log("here");
+          car.turn("right");
+        }
       })
     }
   }
@@ -58,6 +67,9 @@ const Simulation = () => {
       })
     }
   }
+
+
+  
 
   useEffect(() => {
 
@@ -79,7 +91,13 @@ const Simulation = () => {
         // const spawnInterval = setInterval(() => {
         //   carRef.current.push(new Car(frontRef.current.width / 2 + 20, 0, carImageRef.current));
         // }, 1000);
-
+        frontRef.current.addEventListener("mousemove", (event) => {
+          const rect = frontRef.current.getBoundingClientRect(); // Get canvas position on screen
+          setX(event.clientX - rect.left); // Adjust for canvas position
+          setY(event.clientY - rect.top);
+          
+          console.log(`Clicked at: (${x}, ${y})`);
+        });
         // background drawn only once when component is mounted
         backgroundCtx.drawImage(grassImageRef.current, 0, 0, backgroundRef.current.width, backgroundRef.current.height);
         
@@ -98,8 +116,9 @@ const Simulation = () => {
   return (
     <div className="col-span-2 relative bg-gray-100 overflow-y-hidden p-5">
       <div className="p-5 relative w-full h-full">
-        <canvas ref={backgroundRef} id="background-layer" className="absolute top-0 left-0 w-full h-full border" width={window.innerWidth} height={window.innerHeight}></canvas>
-        <canvas ref={frontRef} id="vehicles-layer" className="absolute top-0 left-0 w-full h-full border" width={window.innerWidth} height={window.innerHeight}></canvas>
+        <canvas ref={backgroundRef} id="background-layer" className="absolute top-0 left-0 w-full h-full border" width={1000} height={600}></canvas>
+        <canvas ref={frontRef} id="vehicles-layer" className="absolute top-0 left-0 w-full h-full border" width={1000} height={600}></canvas>
+        <h1 className='text-white absolute'>x={x}, y={y}</h1>
       </div>
     </div>
   )
