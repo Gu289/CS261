@@ -163,7 +163,7 @@ class Enqueuer:
                 vehicle.arrival_time = timezone.now()
                 vehicle.save()
 
-            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {direction} traffic, lane {random_lane}] A new vehicle reached the junction.")
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {direction} traffic, lane {random_lane}] A new vehicle going to the {vehicle.exit_direction} reached the junction.")
 
     def start(self):
         for direction in self.traffic_dict:
@@ -182,27 +182,28 @@ class Dequeuer:
     def dequeue_vehicles(self, dir):
         old_q_size = [lane.qsize() for lane in self.traffic_dict[dir]["incoming"]]
         while not stop_event.is_set():
-            
-            if self.traffic_light.is_green(dir):
-                for index,lane in enumerate(self.traffic_dict[dir]["incoming"]):
-                    if not lane.empty():
-                        time.sleep(self.CROSSING_TIME) 
-                        with self.lock:
-                            vehicle = lane.get()
-                            incoming_dir = vehicle.incoming_direction
-                            exit_dir = vehicle.exit_direction
-                            self.traffic_dict[exit_dir]["exiting"][index].put(vehicle)
-                            vehicle.departure_time = timezone.now()
-                            vehicle.save()
+            for index,lane in enumerate(self.traffic_dict[dir]["incoming"]):
+                if not lane.empty():
+                    self.lock.acquire()  # Peek at the first vehicle in the queue
+                    vehicle = lane.queue[0]
+                    if self.traffic_light.is_green(vehicle.exit_direction):
+                        vehicle = lane.get()
+                        incoming_dir = vehicle.incoming_direction
+                        exit_dir = vehicle.exit_direction
+                        
+                        self.traffic_dict[exit_dir]["exiting"][index].put(vehicle)
+                        vehicle.departure_time = timezone.now()
+                        vehicle.save()
+                        self.lock.release()
 
+                        time.sleep(self.CROSSING_TIME) 
                         print(f"{time.strftime('%Y-%m-%d %H:%M:%S')}: Vehicle from {incoming_dir} exited to {exit_dir}")
-                    # else:
-                    #     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {dir} traffic] Lane {index} is empty.")
-            else:
-                new_q_size = [lane.qsize() for lane in self.traffic_dict[dir]["incoming"]]
-                if new_q_size != old_q_size:
-                    old_q_size = new_q_size
-                    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {dir} traffic] Traffic light is red, current queue length: {new_q_size}")
+                    else:
+                        new_q_size = [lane.qsize() for lane in self.traffic_dict[dir]["incoming"]]
+                        if new_q_size != old_q_size:
+                            old_q_size = new_q_size
+                            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {dir} traffic] Traffic light is red, current queue length: {new_q_size}")
+                        self.lock.release()
 
     def start(self):
         for direction in self.traffic_dict:
