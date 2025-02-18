@@ -43,14 +43,13 @@ const Simulation = () => {
   // updates car positions etc
   const updateState = () => {
     
+
     if(carRef.current){
       carRef.current.forEach((car) => {
-        // car.move()
-        if(car.speed != 0){
+        if(!car.waiting){
           car.move();
-        } else{
-          console.log("here");
-          car.turn("right");
+        } else if(car.waiting){
+          car.enterJunction("right");
         }
       })
     }
@@ -84,9 +83,9 @@ const Simulation = () => {
 
         carRef.current.push(new Car(frontRef.current.width / 2 + 20, 0, carImageRef.current));
         
-        // const spawnInterval = setInterval(() => {
-        //   carRef.current.push(new Car(frontRef.current.width / 2 + 20, 0, carImageRef.current));
-        // }, 1000);
+        const spawnInterval = setInterval(() => {
+          carRef.current.push(new Car(frontRef.current.width / 2 + 20, 0, carImageRef.current));
+        }, 1000);
         frontRef.current.addEventListener("mousemove", (event) => {
           const rect = frontRef.current.getBoundingClientRect(); // Get canvas position on screen
           setX(event.clientX - rect.left); // Adjust for canvas position
