@@ -1,7 +1,6 @@
 import { useRef, useEffect, useState } from 'react'
-import grassSrc from "../assets/junction1.png"
+import grassSrc from "../assets/junction2lanes.png"
 import carSrc from "../assets/car1.png"
-import road1lanesWithSrc from "../assets/road1lanesCropWith.png"
 import Car from '../entities/Car'
 
 const Simulation = () => {
@@ -23,7 +22,6 @@ const Simulation = () => {
 
   // reference for images
   const grassImageRef = useRef(null);
-  const roadImageRef = useRef(null);
   const carImageRef = useRef(null);
 
   // load car, road, traffic lights image when component is mounted
@@ -74,13 +72,11 @@ const Simulation = () => {
   useEffect(() => {
 
     // load the images
-    Promise.all([loadImages(carSrc), 
-      loadImages(road1lanesWithSrc),
+    Promise.all([loadImages(carSrc),
       loadImages(grassSrc)
     ]).then(
-      ([loadedCarImg, loadedRoad1WithImg, loadedGrassImg]) => {
+      ([loadedCarImg, loadedGrassImg]) => {
         carImageRef.current = loadedCarImg;
-        roadImageRef.current = loadedRoad1WithImg;
         grassImageRef.current = loadedGrassImg;
       
         const backgroundCtx = backgroundRef.current.getContext("2d");
@@ -114,11 +110,11 @@ const Simulation = () => {
 
 
   return (
-    <div className="col-span-2 relative bg-gray-100 overflow-y-hidden p-5">
-      <div className="p-5 relative w-full h-full">
-        <canvas ref={backgroundRef} id="background-layer" className="absolute top-0 left-0 w-full h-full border" width={1000} height={600}></canvas>
-        <canvas ref={frontRef} id="vehicles-layer" className="absolute top-0 left-0 w-full h-full border" width={1000} height={600}></canvas>
-        <h1 className='text-white absolute'>x={x}, y={y}</h1>
+    <div className="col-span-2 relative bg-gray-100 overflow-y-hidden p-5 flex justify-center items-center">
+      <div className="relative w-[600px] h-[600px]">
+        <canvas ref={backgroundRef} id="background-layer" className="absolute top-0 left-0 border" width={600} height={600}></canvas>
+        <canvas ref={frontRef} id="vehicles-layer" className="absolute top-0 left-0 border" width={600} height={600}></canvas>
+        <h1 className='absolute text-white'>x={x}, y={y}</h1>
       </div>
     </div>
   )
