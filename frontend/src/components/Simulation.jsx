@@ -48,7 +48,8 @@ const Simulation = () => {
       carRef.current.forEach((car) => {
         if(!car.waiting){
           car.move();
-        } else if(car.waiting){
+        } 
+        else if(car.waiting){
           car.enterJunction("right");
         }
       })

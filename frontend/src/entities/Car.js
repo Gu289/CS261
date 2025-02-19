@@ -54,9 +54,9 @@ export default class Car{
     
     rotate(direction){
 
-        if(direction === "right"){
+        if(direction === "left"){
             this.directionAngle -= Math.PI / 2
-        } else if(direction === "left"){
+        } else if(direction === "right"){
             this.directionAngle += Math.PI / 2
         }
 
@@ -64,12 +64,14 @@ export default class Car{
             this.targetAngle = 0;
         }
         if(this.targetAngle < 90){
-            this.spriteAngle += 1;
-            this.targetAngle += 1;
-            this.isRotating = true;
+            this.spriteAngle = 90;
+            this.targetAngle = 90;
+            this.isRotating = false;
+            this.waiting = false;
+            this.speed = 1;
         } else{
             this.targetAngle = 0;
-            this.speed = 1;
+            
             this.waiting = false;
             this.isRotating = false;
         }
