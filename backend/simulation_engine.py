@@ -93,8 +93,8 @@ class TrafficLight:
     def switch_state(self):
         with self.lock:
             self.NS_traffic, self.EW_traffic = self.EW_traffic, self.NS_traffic
-            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: north-south Traffic Light] {self.NS_traffic}")
-            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: east-west Traffic Light] {self.EW_traffic}")
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} north-south Traffic Light] {self.NS_traffic}")
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} east-west Traffic Light] {self.EW_traffic}")
 
     def is_green(self, direction:str):
         with self.lock:
@@ -110,7 +110,7 @@ class TrafficLight:
 
     def start(self):
         threading.Thread(target=self.operation, daemon=True).start()  
-        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: Traffic Light] A thread for a traffic light has started.")
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} Traffic Light] A thread for a traffic light has started.")
 
 class Enqueuer:
     def __init__(self, traffic_dict, locks_dict, vehicle_warehouse, junction_config=junction_config):
@@ -138,7 +138,7 @@ class Enqueuer:
                 vehicle.arrival_time = timezone.now()
                 vehicle.save()
 
-            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} | {direction} traffic, lane {lane}] A new vehicle going to the {vehicle.exit_direction} reached the junction.")
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {direction} traffic, lane {lane}] A new vehicle going to the {vehicle.exit_direction} reached the junction.")
         
         if self.vehicle_warehouse.is_abs_empty():
             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] No more vehicles in the warehouse. Stopping the simulation.")
@@ -147,7 +147,7 @@ class Enqueuer:
     def start(self):
         for direction in self.traffic_dict:
             threading.Thread(target=self.enqueue_vehicles, args=(direction,), daemon=True).start()
-            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} | {direction} traffic ] A thread for enqueueing traffic has stared.")
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {direction} traffic ] A thread for enqueueing traffic has stared.")
 
 
 class Dequeuer:
@@ -178,19 +178,19 @@ class Dequeuer:
                             self.traffic_dict[exit_dir]["exiting"][index].put(vehicle)
                             vehicle.departure_time = timezone.now()
                             vehicle.save()
-                            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Vehicle from {incoming_dir} exited to {exit_dir}")
+                            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} Vehicle from {incoming_dir} exited to {exit_dir}")
 
                     else:
                         new_q_size = [lane.qsize() for lane in self.traffic_dict[dir]["incoming"]]
                         if new_q_size != old_q_size:
                             old_q_size = new_q_size
-                            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} | {dir} traffic] Traffic light is red, current queue length: {new_q_size}")
+                            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {dir} traffic] Traffic light is red, current queue length: {new_q_size}")
                         self.locks_dict[dir]["incoming"][index].release() 
 
     def start(self):
         for direction in self.traffic_dict:
             threading.Thread(target=self.dequeue_vehicles, daemon=True, args=(direction,)).start()
-            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}: {direction} traffic ] A thread for dequeuing traffic has stared.")
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {direction} traffic ] A thread for dequeuing traffic has stared.")
 
 class VehiclesWarehouse:
     
