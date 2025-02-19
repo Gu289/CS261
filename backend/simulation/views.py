@@ -3,7 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from .models import Simulation
 from .serializers import SimulationSerializer
 from django.middleware.csrf import get_token
-from .simulation_engine import SimulationEngine
+# from .simulation_engine import SimulationEngine
 import json
 
 def get_csrf_token(request):
@@ -47,49 +47,49 @@ def create_simulation(request):
 
     return JsonResponse({"Error": "Invalid request method"},status=405)
 
-def start_simulation(request):
-    '''
-    This function is called when a POST request is made to the /start-simulation/ endpoint.
-    It starts the simulation with the provided simulation_id and returns a JSON response with the simulation status and parameters used.
-    '''
-    if request.method != 'POST': 
-        return JsonResponse({"Error": "Invalid request method"},status=405)
+# def start_simulation(request):
+#     '''
+#     This function is called when a POST request is made to the /start-simulation/ endpoint.
+#     It starts the simulation with the provided simulation_id and returns a JSON response with the simulation status and parameters used.
+#     '''
+#     if request.method != 'POST': 
+#         return JsonResponse({"Error": "Invalid request method"},status=405)
 
-    simulation_id = request.GET.get('simulation_id')
-    try:
-        simulation = Simulation.objects.get(simulation_id=simulation_id)
-    except Simulation.DoesNotExist:
-        error_message = {
-            "Error": f"Simulation id {simulation_id} not found",
-            "simulation_status": "Not found"
-        }
-        return JsonResponse(error_message,status=404)
+#     simulation_id = request.GET.get('simulation_id')
+#     try:
+#         simulation = Simulation.objects.get(simulation_id=simulation_id)
+#     except Simulation.DoesNotExist:
+#         error_message = {
+#             "Error": f"Simulation id {simulation_id} not found",
+#             "simulation_status": "Not found"
+#         }
+#         return JsonResponse(error_message,status=404)
 
-    if simulation.simulation_status == "running" or simulation.simulation_status == "completed":
-        return JsonResponse({"Error": "Simulation already running or completed"},status=400)
+#     if simulation.simulation_status == "running" or simulation.simulation_status == "completed":
+#         return JsonResponse({"Error": "Simulation already running or completed"},status=400)
 
-    # TODO: Start simulation with the parameters and returns a boolean, true if successful, false otherwise
+#     # TODO: Start simulation with the parameters and returns a boolean, true if successful, false otherwise
     
-    # Call the simulation engine to run the simulation.
-    engine = SimulationEngine(simulation=simulation, simulationTime=60, timeStep=1)
-    engine.runSimulation()
-    simulation_results = engine.results 
-    # update simulation fields and return a JSON response.
+#     # Call the simulation engine to run the simulation.
+#     engine = SimulationEngine(simulation=simulation, simulationTime=60, timeStep=1)
+#     engine.runSimulation()
+#     simulation_results = engine.results 
+#     # update simulation fields and return a JSON response.
 
 
-    is_successful = True
+#     is_successful = True
 
-    junction_config = simulation.junction_config
-    if is_successful:
-        simulation.simulation_status = "running"
-        simulation.save()
-        success_message = {
-            "message": "Simulation started and updated successfully",
-            "simulation_id": simulation.simulation_id,
-            "simulation_status": "running",
-            "junction_config": junction_config
-        }
-        return JsonResponse(success_message,status=200)
+#     junction_config = simulation.junction_config
+#     if is_successful:
+#         simulation.simulation_status = "running"
+#         simulation.save()
+#         success_message = {
+#             "message": "Simulation started and updated successfully",
+#             "simulation_id": simulation.simulation_id,
+#             "simulation_status": "running",
+#             "junction_config": junction_config
+#         }
+#         return JsonResponse(success_message,status=200)
     
 
 def check_simulation_status(request):

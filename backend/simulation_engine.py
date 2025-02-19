@@ -166,7 +166,7 @@ class Dequeuer:
                 if not lane.empty():
                     self.locks_dict[dir]["incoming"][index].acquire()  
                     vehicle = lane.queue[0] # Peek at the first vehicle in the queue
-                    if self.traffic_light.is_green(vehicle.exit_direction):
+                    if self.traffic_light.is_green(vehicle.incoming_direction):
                         vehicle = lane.get()
                         self.locks_dict[dir]["incoming"][index].release() 
 
@@ -174,11 +174,13 @@ class Dequeuer:
                         exit_dir = vehicle.exit_direction
                         
                         with self.locks_dict[exit_dir]["exiting"][index]:
+                            vehicle.departure_time = timezone.now()
+                            time_diff = (vehicle.departure_time - vehicle.arrival_time).total_seconds()
+                            vehicle.waiting_time = time_diff
+                            vehicle.save()
                             time.sleep(self.CROSSING_TIME) 
                             self.traffic_dict[exit_dir]["exiting"][index].put(vehicle)
-                            vehicle.departure_time = timezone.now()
-                            vehicle.save()
-                            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} Vehicle from {incoming_dir} exited to {exit_dir}")
+                            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} Vehicle from {incoming_dir} exited to {exit_dir}, waited for {time_diff}")
 
                     else:
                         new_q_size = [lane.qsize() for lane in self.traffic_dict[dir]["incoming"]]

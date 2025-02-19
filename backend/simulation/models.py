@@ -74,6 +74,7 @@ class Vehicle(models.Model):
     departure_time = models.DateTimeField(null=True, blank=True)
     incoming_direction = models.CharField(max_length=50, blank=False)
     exit_direction = models.CharField(max_length=50, blank=False)
+    waiting_time = models.FloatField(blank=True, null=True)
     lane = models.IntegerField(blank=False)
 
 
