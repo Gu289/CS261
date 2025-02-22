@@ -23,10 +23,10 @@ stop_event = threading.Event()
 
 junction_config = {
     "north": {
-        "inbound": 500,
-        "east": 200,
-        "south": 150,
-        "west": 150
+        "inbound": 1500,
+        "east": 500,
+        "south": 200,
+        "west": 800
     },
     "east": {
         "inbound": 550,
@@ -48,39 +48,6 @@ junction_config = {
     },
     "leftTurn": False,
     "numLanes": 2
-}
-
-traffic_dict = {
-    "north": {
-        "incoming": [Queue() for _ in range(n)],
-        "exiting": [Queue() for _ in range(n)]
-    },
-    "south": {
-        "incoming": [Queue() for _ in range(n)],
-        "exiting": [Queue() for _ in range(n)]
-    },
-    "east": {
-        "incoming": [Queue() for _ in range(n)],
-        "exiting": [Queue() for _ in range(n)]
-    },
-    "west": {
-        "incoming": [Queue() for _ in range(n)],
-        "exiting": [Queue() for _ in range(n)]
-    }
-}
-
-locks_dict = {
-    
-    direction: {
-        key: [threading.Lock() for _ in range(n)]
-        for key in ["incoming", "exiting"]
-    }
-    for direction in traffic_dict
-    
-}
-
-locks_dict["warehouse"] = {
-    direction: threading.Lock() for direction in traffic_dict
 }
 
 class TrafficLight:
@@ -106,7 +73,7 @@ class TrafficLight:
     def operation(self):
         while not stop_event.is_set():
             time.sleep(self.cycle_time)
-            traffic_light.switch_state() # Switch traffic light state
+            self.switch_state() # Switch traffic light state
 
     def start(self):
         threading.Thread(target=self.operation, daemon=True).start()  
@@ -132,13 +99,13 @@ class Enqueuer:
             with self.locks_dict["warehouse"][direction]:
                 vehicle = self.vehicle_warehouse.get_vehicle(direction)
 
-            lane = vehicle.lane
-            with self.locks_dict[direction]["incoming"][lane]:
-                self.traffic_dict[direction]["incoming"][lane].put(vehicle)
+            incoming_lane = vehicle.incoming_lane
+            with self.locks_dict[direction]["incoming"][incoming_lane]:
+                self.traffic_dict[direction]["incoming"][incoming_lane].put(vehicle)
                 vehicle.arrival_time = timezone.now()
                 vehicle.save()
 
-            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {direction} traffic, lane {lane}] A new vehicle going to the {vehicle.exit_direction} reached the junction.")
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {direction} traffic, lane {incoming_lane}] A new vehicle going to the {vehicle.exit_direction} reached the junction.")
         
         if self.vehicle_warehouse.is_abs_empty():
             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] No more vehicles in the warehouse. Stopping the simulation.")
@@ -151,41 +118,83 @@ class Enqueuer:
 
 
 class Dequeuer:
-    def __init__(self, traffic_dict, locks_dict, junction_config, traffic_light, crossing_time=0.5):
+    def __init__(self, traffic_dict, locks_dict, max_queue_length_tracker, junction_config, traffic_light, crossing_time=0.5):
         self.traffic_dict = traffic_dict
         self.junction_config = junction_config
         self.traffic_light = traffic_light
         self.locks_dict = locks_dict
+        self.max_queue_length_tracker = max_queue_length_tracker
         
         self.CROSSING_TIME = crossing_time
+    
+    @staticmethod
+    def get_opposite_direction(incoming_direction):
+        match incoming_direction:
+            case "north":
+                return "south"
+            case "south":
+                return "north"
+            case "east":
+                return "west"
+            case "west":  
+                return "east"
+
 
     def dequeue_vehicles(self, dir):
-        old_q_size = [lane.qsize() for lane in self.traffic_dict[dir]["incoming"]]
+        # Initialize the old queue size for the incoming lanes
+        old_inc_q_size = [int(lane.qsize()) for lane in self.traffic_dict[dir]["incoming"]]
+
+        # Initialize the old queue size for the exiting lanes
+        old_ext_q_size = [int(lane.qsize()) for lane in self.traffic_dict[dir]["exiting"]]
+
+        # Dequeue vehicles as long as the stop event is not set, i.e., the simulation is not stopped
         while not stop_event.is_set():
+
+            # Iterate over the lanes in the direction this function is handling
             for index,lane in enumerate(self.traffic_dict[dir]["incoming"]):
+
+                # Check if the lane is not empty
                 if not lane.empty():
+                    # Acquire the lock for this particular lane
                     self.locks_dict[dir]["incoming"][index].acquire()  
-                    vehicle = lane.queue[0] # Peek at the first vehicle in the queue
-                    if self.traffic_light.is_green(vehicle.incoming_direction):
+                    
+                    # Peek at the first vehicle in the queue
+                    vehicle = lane.queue[0] 
+                            
+                    # Check if the traffic light is green for the incoming direction of the vehicle
+                    if self.traffic_light.is_green(vehicle.incoming_direction): 
                         vehicle = lane.get()
                         self.locks_dict[dir]["incoming"][index].release() 
 
+                        # Check if the vehicle is and can cross the junction
+                        if vehicle.get_relative_dir(vehicle.incoming_direction, vehicle.exit_direction) == Vehicle.TURNING_RIGHT:  
+                            # Check if the adjacent lane is empty
+                            opp_dir = self.get_opposite_direction(vehicle.incoming_direction)
+                            new_ext_q_size = [int(lane.qsize()) for lane in self.traffic_dict[opp_dir]["incoming"]]
+                            if new_ext_q_size != [0 for _ in range(self.junction_config["numLanes"])]:
+                                if new_ext_q_size != old_ext_q_size:
+                                    old_ext_q_size = new_ext_q_size
+                                    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {dir} traffic] Vehicle from {vehicle.incoming_direction} is turning right but the adjacent lane is not empty:{new_ext_q_size}")
+                                continue
+
                         incoming_dir = vehicle.incoming_direction
                         exit_dir = vehicle.exit_direction
+                        exit_lane = vehicle.exit_lane
                         
-                        with self.locks_dict[exit_dir]["exiting"][index]:
+                        with self.locks_dict[exit_dir]["exiting"][exit_lane]:
                             vehicle.departure_time = timezone.now()
                             time_diff = (vehicle.departure_time - vehicle.arrival_time).total_seconds()
                             vehicle.waiting_time = time_diff
                             vehicle.save()
                             time.sleep(self.CROSSING_TIME) 
-                            self.traffic_dict[exit_dir]["exiting"][index].put(vehicle)
+                            self.traffic_dict[exit_dir]["exiting"][exit_lane].put(vehicle)
                             print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} Vehicle from {incoming_dir} exited to {exit_dir}, waited for {time_diff}")
 
                     else:
+                        self.max_queue_length_tracker[dir] = max(self.max_queue_length_tracker[dir], lane.qsize())
                         new_q_size = [lane.qsize() for lane in self.traffic_dict[dir]["incoming"]]
-                        if new_q_size != old_q_size:
-                            old_q_size = new_q_size
+                        if new_q_size != old_inc_q_size:
+                            old_inc_q_size = new_q_size
                             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {dir} traffic] Traffic light is red, current queue length: {new_q_size}")
                         self.locks_dict[dir]["incoming"][index].release() 
 
@@ -216,11 +225,23 @@ class VehiclesWarehouse:
     def vehicleBuilder(self, incoming_direction:str, exit_direction:str) -> Vehicle:
         lane_count = junction_config["numLanes"]
         random_lane = random.randint(0,  lane_count - 1)
-
+        relative_dir = Vehicle.get_relative_dir(incoming_direction, exit_direction)
+        match relative_dir:
+            case Vehicle.TURNING_LEFT:
+                incoming_lane = 0
+            case Vehicle.GOING_STRAIGHT:
+                incoming_lane = random_lane
+            case Vehicle.TURNING_RIGHT:
+                incoming_lane = lane_count - 1
+            case _:
+                incoming_lane = random_lane
+                
+        
         vehicle = {
             "incoming_direction": incoming_direction,
             "exit_direction": exit_direction,
-            "lane": random_lane
+            "incoming_lane": incoming_lane,
+            "exit_lane": list(range(lane_count))[::-1][incoming_lane]
         }
 
         vehicle = Vehicle.objects.create(**vehicle)
@@ -278,21 +299,105 @@ class VehiclesWarehouse:
         with self.lock:
             return all([not bool(self.warehouse[d]) for d in self.warehouse])
 
+class Junction:
+    def __init__(self, junction_config, vehicle_warehouse):
+        self.junction_config = junction_config
+        self.vehicle_warehouse = vehicle_warehouse
+        self.traffic_dict = {
+            "north": {
+                "incoming": [Queue() for _ in range(n)],
+                "exiting": [Queue() for _ in range(n)]
+            },
+            "south": {
+                "incoming": [Queue() for _ in range(n)],
+                "exiting": [Queue() for _ in range(n)]
+            },
+            "east": {
+                "incoming": [Queue() for _ in range(n)],
+                "exiting": [Queue() for _ in range(n)]
+            },
+            "west": {
+                "incoming": [Queue() for _ in range(n)],
+                "exiting": [Queue() for _ in range(n)]
+            }
+        }
+
+        self.locks_dict = {
+            
+            direction: {
+                key: [threading.Lock() for _ in range(n)]
+                for key in ["incoming", "exiting"]
+            }
+            for direction in self.traffic_dict
+            
+        }
+
+        self.locks_dict["warehouse"] = {
+            direction: threading.Lock() for direction in self.traffic_dict
+        }
+
+        self.max_queue_length_tracker = {
+            "north": 0,
+            "south": 0,
+            "east": 0,   
+            "west": 0
+        }
+
+        self.traffic_light = TrafficLight(15)
+        self.enqueuer = Enqueuer(self.traffic_dict, self.locks_dict, self.vehicle_warehouse, self.junction_config)
+        self.dequeuer = Dequeuer(self.traffic_dict, self.locks_dict, self.max_queue_length_tracker, self.junction_config, self.traffic_light)
+
+    def start(self):
+        self.enqueuer.start()
+        self.dequeuer.start()
+        self.traffic_light.start()
+
 vehicle_warehouse = VehiclesWarehouse(junction_config, 10)
-traffic_light = TrafficLight()
-enqueuer = Enqueuer(traffic_dict, locks_dict, vehicle_warehouse, junction_config)
-dequeuer = Dequeuer(traffic_dict, locks_dict, junction_config, traffic_light)
+junction = Junction(junction_config, vehicle_warehouse)
+junction.start()
 
+from django.db import connection
+def compute_AWT_MWT(path_to_queries):
+    with open(path_to_queries, "r") as file:
+        sql_query = file.read()
+    
+    with connection.cursor() as cursor:
+        cursor.execute(sql_query)
+        result = cursor.fetchall()  # If your query returns results
+    
+    metrics = {}
+    for direction, average_waiting_time, max_waiting_time in result:
+        metrics[direction] = {
+            'average_waiting_time': average_waiting_time,
+            'max_waiting_time': max_waiting_time
+        }
 
-enqueuer.start()
-dequeuer.start()
-traffic_light.start()
+    return metrics
 
 try:
     while not vehicle_warehouse.is_abs_empty():
         time.sleep(1)
     stop_event.set()
     print("Simulation completed.")
+    print("Computing metrics...")
+
+    path_to_queries = r"queries\compute_AWT_MWT.sql"
+    metrics = compute_AWT_MWT(path_to_queries)
+    for dir in metrics:
+        metrics[dir]["max_queue_length"] = junction.max_queue_length_tracker[dir]
+
+    print(metrics)
+
 except KeyboardInterrupt:
     stop_event.set()
     print("Simulation stopped.")
+finally:
+    # Delete all vehicles from the database and reset the primary key sequence
+    Vehicle.objects.all().delete()
+
+    from django.db import connection
+    with connection.cursor() as cursor:
+        cursor.execute("DELETE FROM simulation_vehicle;")
+        cursor.execute("DELETE FROM sqlite_sequence WHERE name='simulation_vehicle';")
+    print("Vehicle table reset.")
+

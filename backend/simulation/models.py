@@ -69,13 +69,43 @@ class Queue(models.Model):
 
 
 class Vehicle(models.Model):
+    # Define constants for the each direction
+    TURNING_LEFT =  1
+    GOING_STRAIGHT = 2
+    TURNING_RIGHT = 3
+
+    relative_dir_map = {
+            ("north", "east"): TURNING_LEFT,
+            ("south", "west"): TURNING_LEFT,
+            ("east", "south"): TURNING_LEFT,
+            ("west", "north"): TURNING_LEFT,
+            ("north", "west"): TURNING_RIGHT,
+            ("south", "east"): TURNING_RIGHT,
+            ("east", "north"): TURNING_RIGHT,
+            ("west", "south"): TURNING_RIGHT,
+            ("north", "south"): GOING_STRAIGHT,
+            ("south", "north"): GOING_STRAIGHT,
+            ("east", "west"): GOING_STRAIGHT,
+            ("west", "east"): GOING_STRAIGHT,
+        }
+    
+    @classmethod
+    def get_relative_dir(cls, incoming_direction, exit_direction, default=None):
+        relative_dir = cls.relative_dir_map.get((incoming_direction, exit_direction), default)
+        if relative_dir is None: raise ValueError("Invalid directions provided")
+        return relative_dir
+    
+    # def get_relative_dir(self):
+    #     return Vehicle.get_relative_dir(self.incoming_direction, self.exit_direction)
+
     # AutoField 'id' is added by default as the primary key.
     arrival_time = models.DateTimeField(null=True, blank=True)
     departure_time = models.DateTimeField(null=True, blank=True)
     incoming_direction = models.CharField(max_length=50, blank=False)
     exit_direction = models.CharField(max_length=50, blank=False)
     waiting_time = models.FloatField(blank=True, null=True)
-    lane = models.IntegerField(blank=False)
+    incoming_lane = models.IntegerField(blank=False, default=1)
+    exit_lane = models.IntegerField(blank=False, default=1)
 
 
     def __str__(self):

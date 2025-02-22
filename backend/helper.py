@@ -23,11 +23,11 @@ def compute_metrics(path_to_queries):
             'average_waiting_time': average_waiting_time,
             'max_waiting_time': max_waiting_time
         }
-    result = metrics
-    print(result)
+    print(metrics)
+    return metrics
 
 
 
-path_to_queries = r"C:\Users\ahmad\OneDrive - University of Warwick\CS261 Software Engineering\CS261\backend\queries\compute_AWT_MWT.sql"
+path_to_queries = r"queries\compute_AWT_MWT.sql"
 # path_to_queries = "backend\queries\compute_AWT_MWT.sql"
 compute_metrics(path_to_queries)
