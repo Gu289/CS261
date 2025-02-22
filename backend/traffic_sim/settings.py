@@ -25,11 +25,12 @@ SECRET_KEY = 'django-insecure-ecqm6xg)zmb2rqvv_ojw5q=ga#83pu2(akjwvu$hpk98%%qf(6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# Ngrok settings
 NGROK_URL = "7416-2a0a-ef40-b56-e801-287f-b6e6-e6d3-2580.ngrok-free.app"
 ALLOWED_HOSTS = [NGROK_URL, '127.0.0.1', 'localhost', 'localhost:5173']
 
-# SECURITY WARNING: update this when you have the production host
-CORS_ALLOW_ALL_ORIGINS = True
+# Celery settings
+CELERY_BROKER_URL = "sqla+sqlite:///celerydb.sqlite"
 
 # Application definition
 
@@ -56,8 +57,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware'
 ]
 
-# CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ["Set-Cookie"]
 

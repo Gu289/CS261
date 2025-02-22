@@ -72,6 +72,9 @@ class SimulationResults:
             f"Max queue length: {self.max_queue_length}"
         )
         return report
+    
+    def __str__(self):
+        return self.generate_report()
 
 '''
 junction_config = {

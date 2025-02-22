@@ -1,7 +1,11 @@
 To run the backend server:
-1. Use Python 3.11.9
-2. Run 'pip install -r requirements.txt' in the same directory as requirements.txt to install all required Python packages.
-3. Run 'python manage.py runserver' in the same directory as manage.py
+- Make sure you are inside the 'backend' folder.
+- Use Python 3.11.9
+- Run 'pip install -r requirements.txt' in the same directory as requirements.txt to install all required Python packages.
+- Run 'python manage.py makemigrations'
+- Run 'python manage.py migrate'
+- Run 'python manage.py runserver' in the same directory as manage.py to run Django server.
+- Run 'celery -A traffic_sim worker --loglevel=info --pool=solo' to run the server responsible for executing background tasks.
 
 To reset the database:
 1. Just delete the db.sqlite3
