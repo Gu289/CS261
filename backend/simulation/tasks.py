@@ -19,16 +19,16 @@ def run_simulation(simulation_id):
         raise Exception("Simulation not found")
     
     # Create an instance of the simulation engine
-    engine = SimulationEngine(simulation, 60, 1)
+    engine = SimulationEngine(simulation)
     
     # Run the simulation
-    engine.runSimulation()
-    results = engine.results
+    results = engine.start()
 
     # Update simulation object in the database.
-    simulation.avg_wait_time = results.average_wait_time
-    simulation.max_wait_time = results.max_wait_time
-    simulation.max_queue_length = results.max_queue_length
+    # simulation.avg_wait_time = results.average_wait_time
+    # simulation.max_wait_time = results.max_wait_time
+    # simulation.max_queue_length = results.max_queue_length
+    simulation.metrics = results
     simulation.simulation_status = "completed"
     simulation.save()
     

@@ -1,21 +1,18 @@
-import queue
-import time
-import threading
-import numpy as np
+import time, threading, numpy as np, os, django, random, sys
 from queue import Queue
-import os
-import django
-import random
-
+from django.db import connection
+from django.utils import timezone
+from django.conf import settings
 
 # Set up Django settings
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "traffic_sim.settings")
 
 # Initialize Django
 django.setup()
 
-from simulation.models import Vehicle
-from django.utils import timezone
+# Import Django models and packages
+from simulation.models import Vehicle, Simulation
 
 # Global variables
 n = 2  # Number of lanes
@@ -87,7 +84,7 @@ class Enqueuer:
         self.vehicle_warehouse = vehicle_warehouse
 
     def enqueue_vehicles(self, direction):
-        while not vehicle_warehouse.is_empty(direction):
+        while not self.vehicle_warehouse.is_empty(direction):
             VPH = self.junction_config[direction]["inbound"]  # Vehicles per hour
             # print(f"[{direction} traffic]: {VPH} vehicles per second")
 
@@ -300,7 +297,7 @@ class VehiclesWarehouse:
             return all([not bool(self.warehouse[d]) for d in self.warehouse])
 
 class Junction:
-    def __init__(self, junction_config, vehicle_warehouse):
+    def __init__(self, junction_config, vehicle_warehouse, traffic_light_cycle_time=3):
         self.junction_config = junction_config
         self.vehicle_warehouse = vehicle_warehouse
         self.traffic_dict = {
@@ -343,7 +340,7 @@ class Junction:
             "west": 0
         }
 
-        self.traffic_light = TrafficLight(15)
+        self.traffic_light = TrafficLight(traffic_light_cycle_time)
         self.enqueuer = Enqueuer(self.traffic_dict, self.locks_dict, self.vehicle_warehouse, self.junction_config)
         self.dequeuer = Dequeuer(self.traffic_dict, self.locks_dict, self.max_queue_length_tracker, self.junction_config, self.traffic_light)
 
@@ -352,52 +349,64 @@ class Junction:
         self.dequeuer.start()
         self.traffic_light.start()
 
-vehicle_warehouse = VehiclesWarehouse(junction_config, 10)
-junction = Junction(junction_config, vehicle_warehouse)
-junction.start()
+class SimulationEngine:
+    def __init__(self, simulation:Simulation, traffic_light_cycle_time=3):
+        self.junction_config = simulation.junction_config
+        self.vehicle_warehouse = VehiclesWarehouse(junction_config, 2)
+        self.junction = Junction(junction_config, self.vehicle_warehouse, traffic_light_cycle_time)
 
-from django.db import connection
-def compute_AWT_MWT(path_to_queries):
-    with open(path_to_queries, "r") as file:
-        sql_query = file.read()
+    @classmethod
+    def compute_AWT_MWT(cls, path_to_queries):
+        with open(path_to_queries, "r") as file:
+            sql_query = file.read()
+        
+        with connection.cursor() as cursor:
+            cursor.execute(sql_query)
+            result = cursor.fetchall()  # If your query returns results
+        
+        metrics = {}
+        for direction, average_waiting_time, max_waiting_time in result:
+            metrics[direction] = {
+                'average_waiting_time': average_waiting_time,
+                'max_waiting_time': max_waiting_time
+            }
+
+        return metrics
     
-    with connection.cursor() as cursor:
-        cursor.execute(sql_query)
-        result = cursor.fetchall()  # If your query returns results
-    
-    metrics = {}
-    for direction, average_waiting_time, max_waiting_time in result:
-        metrics[direction] = {
-            'average_waiting_time': average_waiting_time,
-            'max_waiting_time': max_waiting_time
-        }
+    def start(self):
+        '''
+        Run the simulation and return the metrics upon completion.
+        '''
+        self.junction.start()
+        try:
+            while not self.vehicle_warehouse.is_abs_empty():
+                time.sleep(1)
+            stop_event.set()
+            print("Simulation completed.")
+            print("Computing metrics...")
 
-    return metrics
+            path_to_queries = r"queries\compute_AWT_MWT.sql"
+            metrics = SimulationEngine.compute_AWT_MWT(path_to_queries)
+            for dir in metrics:
+                metrics[dir]["max_queue_length"] = self.junction.max_queue_length_tracker[dir]
 
-try:
-    while not vehicle_warehouse.is_abs_empty():
-        time.sleep(1)
-    stop_event.set()
-    print("Simulation completed.")
-    print("Computing metrics...")
+            return metrics
 
-    path_to_queries = r"queries\compute_AWT_MWT.sql"
-    metrics = compute_AWT_MWT(path_to_queries)
-    for dir in metrics:
-        metrics[dir]["max_queue_length"] = junction.max_queue_length_tracker[dir]
+        except KeyboardInterrupt:
+            stop_event.set()
+            print("Simulation stopped.")
 
-    print(metrics)
+        finally:
+            # Delete all vehicles from the database and reset the primary key sequence
+            Vehicle.objects.all().delete()
 
-except KeyboardInterrupt:
-    stop_event.set()
-    print("Simulation stopped.")
-finally:
-    # Delete all vehicles from the database and reset the primary key sequence
-    Vehicle.objects.all().delete()
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM simulation_vehicle;")
+                cursor.execute("DELETE FROM sqlite_sequence WHERE name='simulation_vehicle';")
 
-    from django.db import connection
-    with connection.cursor() as cursor:
-        cursor.execute("DELETE FROM simulation_vehicle;")
-        cursor.execute("DELETE FROM sqlite_sequence WHERE name='simulation_vehicle';")
-    print("Vehicle table reset.")
+            print("Vehicle table was reset.")
 
+
+# simulation = SimulationEngine(junction_config)
+# simulation.start()

@@ -7,7 +7,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "traffic_sim.settings")
 # Initialize Django
 django.setup()
 
-from simulation.simulation_engine import SimulationEngine
+from backend.simulation.simulation_engine import SimulationEngine
 from simulation.models import Simulation
 
 def main():
