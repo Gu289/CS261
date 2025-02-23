@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import grassSrc from "../assets/junction2.png";
+import grassSrc from "../assets/finale.png";
 import carSrc from "../assets/car1.png";
 import redLightSrc from "../assets/red-light.png"; // Import traffic light
 import Car from '../entities/Car';
@@ -80,10 +80,10 @@ const Simulation = () => {
       const lightHeight = 100;
       
       const trafficLightPositions = [
-        { x: backgroundRef.current.width / 2 - 20, y: 196, rotate: false }, // Top
-        { x: backgroundRef.current.width / 2 - 80, y: backgroundRef.current.height - 290, rotate: false }, // Bottom
-        { x: 217, y: backgroundRef.current.height / 2 - 102, rotate: true }, // Left
-        { x: backgroundRef.current.width - 270, y: backgroundRef.current.height / 2 - 40, rotate: true } // Right
+        { x: backgroundRef.current.width / 2 - 8, y: 195, rotate: false }, // Top
+        { x: backgroundRef.current.width / 2 - 73, y: backgroundRef.current.height - 288, rotate: false }, // Bottom
+        { x: 215, y: backgroundRef.current.height / 2 - 100, rotate: true }, // Left
+        { x: backgroundRef.current.width - 268, y: backgroundRef.current.height / 2 - 36, rotate: true } // Right
       ];
 
       trafficLightPositions.forEach(({ x, y, rotate }) => {
@@ -96,7 +96,7 @@ const Simulation = () => {
             redLightImageRef.current,
             -lightWidth / 2,
             -lightHeight / 2,
-            lightWidth + 45,
+            lightWidth + 35,
             lightHeight
           );
         } else {
@@ -104,7 +104,7 @@ const Simulation = () => {
             redLightImageRef.current,
             x,
             y,
-            lightWidth + 45,
+            lightWidth + 30,
             lightHeight
           );
         }
