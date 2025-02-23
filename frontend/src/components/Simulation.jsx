@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import grassSrc from "../assets/junction2lanes.png";
+import grassSrc from "../assets/junction2.png";
 import carSrc from "../assets/car1.png";
 import redLightSrc from "../assets/red-light.png"; // Import traffic light
 import Car from '../entities/Car';
