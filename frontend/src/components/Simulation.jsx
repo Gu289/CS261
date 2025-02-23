@@ -80,7 +80,7 @@ const Simulation = () => {
       const lightHeight = 100;
       
       const trafficLightPositions = [
-        { x: backgroundRef.current.width / 2 - 8, y: 195, rotate: false }, // Top
+        { x: backgroundRef.current.width / 2 - 8, y: 194, rotate: false }, // Top
         { x: backgroundRef.current.width / 2 - 73, y: backgroundRef.current.height - 288, rotate: false }, // Bottom
         { x: 215, y: backgroundRef.current.height / 2 - 100, rotate: true }, // Left
         { x: backgroundRef.current.width - 268, y: backgroundRef.current.height / 2 - 36, rotate: true } // Right
