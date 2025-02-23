@@ -1,123 +1,162 @@
-import { useRef, useEffect, useState } from 'react'
-import grassSrc from "../assets/junction2lanes.png"
-import carSrc from "../assets/car1.png"
-import Car from '../entities/Car'
+import { useRef, useEffect, useState } from 'react';
+import grassSrc from "../assets/junction2lanes.png";
+import carSrc from "../assets/car1.png";
+import redLightSrc from "../assets/red-light.png"; // Import traffic light
+import Car from '../entities/Car';
 
 const Simulation = () => {
-
-  // Top = W/2, 0
-  // Bottom = W/2, H
-  // Left = 0, H/2
-  // Right = W, H/2
-
   const [x, setX] = useState(0);
   const [y, setY] = useState(0);
 
   const animationFrameRef = useRef(null);
   const carRef = useRef([]);
   
-  // reference for canvas
   const backgroundRef = useRef(null);
   const frontRef = useRef(null);
 
-  // reference for images
   const grassImageRef = useRef(null);
   const carImageRef = useRef(null);
+  const redLightImageRef = useRef(null);
 
-  // load car, road, traffic lights image when component is mounted
   const loadImages = (src) => {
     return new Promise((resolve) => {
       const img = new Image();
       img.src = src;
-      img.onload = () => resolve(img)
-    })
-  }
+      img.onload = () => resolve(img);
+    });
+  };
 
-  // main animation function that constantly renders each frame
   const animationLoop = (frontCtx, backgroundCtx) => {
-    updateState(); // update positions
-    renderFrame(frontCtx); // redraw elements
-    animationFrameRef.current = requestAnimationFrame(() => animationLoop(frontCtx, backgroundCtx))
-  }
+    updateState();
+    renderFrame(frontCtx);
+    animationFrameRef.current = requestAnimationFrame(() =>
+      animationLoop(frontCtx, backgroundCtx)
+    );
+  };
 
-  // updates car positions etc
   const updateState = () => {
-    
-
-    if(carRef.current){
+    if (carRef.current) {
       carRef.current.forEach((car) => {
-        if(!car.waiting){
+        if (!car.waiting) {
           car.move();
-        } 
-        else if(car.waiting){
+        } else {
           car.enterJunction("right");
         }
-      })
+      });
     }
-  }
+  };
 
-  // clears previous frame and draws new car positions
   const renderFrame = (frontCtx) => {
     frontCtx.clearRect(0, 0, frontRef.current.width, frontRef.current.height);
-    if(carRef.current){
+    if (carRef.current) {
       carRef.current.forEach((car) => {
-        car.draw(frontCtx)
-      })
+        car.draw(frontCtx);
+      });
     }
-  }
-
-
-  
+  };
 
   useEffect(() => {
+    Promise.all([
+      loadImages(carSrc),
+      loadImages(grassSrc),
+      loadImages(redLightSrc),
+    ]).then(([loadedCarImg, loadedGrassImg, loadedRedLightImg]) => {
+      carImageRef.current = loadedCarImg;
+      grassImageRef.current = loadedGrassImg;
+      redLightImageRef.current = loadedRedLightImg;
 
-    // load the images
-    Promise.all([loadImages(carSrc),
-      loadImages(grassSrc)
-    ]).then(
-      ([loadedCarImg, loadedGrassImg]) => {
-        carImageRef.current = loadedCarImg;
-        grassImageRef.current = loadedGrassImg;
+      const backgroundCtx = backgroundRef.current.getContext("2d");
+      const frontCtx = frontRef.current.getContext("2d");
+
+      backgroundCtx.drawImage(
+        grassImageRef.current,
+        0,
+        0,
+        backgroundRef.current.width,
+        backgroundRef.current.height
+      );
+
+      const lightWidth = 50;
+      const lightHeight = 100;
       
-        const backgroundCtx = backgroundRef.current.getContext("2d");
-        const frontCtx = frontRef.current.getContext("2d");
+      const trafficLightPositions = [
+        { x: backgroundRef.current.width / 2 - 20, y: 196, rotate: false }, // Top
+        { x: backgroundRef.current.width / 2 - 80, y: backgroundRef.current.height - 290, rotate: false }, // Bottom
+        { x: 217, y: backgroundRef.current.height / 2 - 102, rotate: true }, // Left
+        { x: backgroundRef.current.width - 270, y: backgroundRef.current.height / 2 - 40, rotate: true } // Right
+      ];
 
-        carRef.current.push(new Car(frontRef.current.width / 2 + 20, 0, carImageRef.current));
+      trafficLightPositions.forEach(({ x, y, rotate }) => {
+        backgroundCtx.save();
         
-        const spawnInterval = setInterval(() => {
-          carRef.current.push(new Car(frontRef.current.width / 2 + 20, 0, carImageRef.current));
-        }, 1000);
-        frontRef.current.addEventListener("mousemove", (event) => {
-          const rect = frontRef.current.getBoundingClientRect(); // Get canvas position on screen
-          setX(event.clientX - rect.left); // Adjust for canvas position
-          setY(event.clientY - rect.top);
-          
-          console.log(`Clicked at: (${x}, ${y})`);
-        });
-        // background drawn only once when component is mounted
-        backgroundCtx.drawImage(grassImageRef.current, 0, 0, backgroundRef.current.width, backgroundRef.current.height);
+        if (rotate) {
+          backgroundCtx.translate(x + lightWidth / 2, y + lightHeight / 2);
+          backgroundCtx.rotate(Math.PI / 2);
+          backgroundCtx.drawImage(
+            redLightImageRef.current,
+            -lightWidth / 2,
+            -lightHeight / 2,
+            lightWidth + 45,
+            lightHeight
+          );
+        } else {
+          backgroundCtx.drawImage(
+            redLightImageRef.current,
+            x,
+            y,
+            lightWidth + 45,
+            lightHeight
+          );
+        }
         
-        animationLoop(frontCtx, backgroundCtx);
-      }
-    )
-    
-    // clean up after component dismounts for performance
+        backgroundCtx.restore();
+      });
+
+      carRef.current.push(
+        new Car(frontRef.current.width / 2 + 20, 0, carImageRef.current)
+      );
+      
+      const spawnInterval = setInterval(() => {
+        carRef.current.push(
+          new Car(frontRef.current.width / 2 + 20, 0, carImageRef.current)
+        );
+      }, 1000);
+
+      frontRef.current.addEventListener("mousemove", (event) => {
+        const rect = frontRef.current.getBoundingClientRect();
+        setX(event.clientX - rect.left);
+        setY(event.clientY - rect.top);
+      });
+      
+      animationLoop(frontCtx, backgroundCtx);
+    });
+
     return () => cancelAnimationFrame(animationFrameRef.current);
-
-  }, [])
-
-
-
+  }, []);
 
   return (
     <div className="col-span-2 relative bg-gray-100 overflow-y-hidden p-5 flex justify-center items-center">
       <div className="relative w-[600px] h-[600px]">
-        <canvas ref={backgroundRef} id="background-layer" className="absolute top-0 left-0 border" width={600} height={600}></canvas>
-        <canvas ref={frontRef} id="vehicles-layer" className="absolute top-0 left-0 border" width={600} height={600}></canvas>
-        <h1 className='absolute text-white'>x={x}, y={y}</h1>
+        <canvas
+          ref={backgroundRef}
+          id="background-layer"
+          className="absolute top-0 left-0 border"
+          width={600}
+          height={600}
+        ></canvas>
+        <canvas
+          ref={frontRef}
+          id="vehicles-layer"
+          className="absolute top-0 left-0 border"
+          width={600}
+          height={600}
+        ></canvas>
+        <h1 className="absolute text-white">
+          x={x}, y={y}
+        </h1>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Simulation
+export default Simulation;
