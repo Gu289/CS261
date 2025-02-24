@@ -1,23 +1,34 @@
 import { useRef, useEffect, useState } from 'react';
-import grassSrc from "../assets/finale.png";
-import carSrc from "../assets/car1.png";
-import redLightSrc from "../assets/red-light.png"; // Import traffic light
-import Car from '../entities/Car';
+import grassSrc from "../../assets/finale.png";
+import carSouthSrc from "../../assets/car-south.png";
+import carNorthSrc from "../../assets/car-north.png";
+import carEastSrc from "../../assets/car-east.png";
+import carWestSrc from "../../assets/car-west.png";
+import redLightSrc from "../../assets/red-light.png"; // Import traffic light
+import Car from './entities/Car';
 
 const Simulation = () => {
+
+  // track mouse position
   const [x, setX] = useState(0);
   const [y, setY] = useState(0);
 
+  // store animation frame ID
   const animationFrameRef = useRef(null);
+  
+  // store array of cars
   const carRef = useRef([]);
   
+  // reference canvas background and front layers
   const backgroundRef = useRef(null);
   const frontRef = useRef(null);
 
+  // reference images
   const grassImageRef = useRef(null);
-  const carImageRef = useRef(null);
+  const carImageRef = useRef({});
   const redLightImageRef = useRef(null);
 
+  // load images asynchronously
   const loadImages = (src) => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -38,36 +49,54 @@ const Simulation = () => {
     if (carRef.current) {
       carRef.current.forEach((car) => {
         if (!car.waiting) {
-          car.move();
-        } else {
-          car.enterJunction("right");
-        }
+          car.checkJunction();
+        } 
       });
     }
   };
 
   const renderFrame = (frontCtx) => {
+    
+    // clear canvas
     frontCtx.clearRect(0, 0, frontRef.current.width, frontRef.current.height);
-    if (carRef.current) {
+
+    // check if there are cars to render
+    if (carRef.current && carRef.current.length > 0) {
       carRef.current.forEach((car) => {
-        car.draw(frontCtx);
+        try{
+          car.draw(frontCtx);
+        } catch (error){
+          console.error("Error drawing car:", error)
+        }
       });
     }
   };
 
   useEffect(() => {
     Promise.all([
-      loadImages(carSrc),
+      loadImages(carNorthSrc),
+      loadImages(carSouthSrc),
+      loadImages(carEastSrc),
+      loadImages(carWestSrc),
       loadImages(grassSrc),
       loadImages(redLightSrc),
-    ]).then(([loadedCarImg, loadedGrassImg, loadedRedLightImg]) => {
-      carImageRef.current = loadedCarImg;
+    ]).then(([loadedCarNorth,
+      loadedCarSouth,
+      loadedCarEast,
+      loadedCarWest, loadedGrassImg, loadedRedLightImg]) => {
+      carImageRef.current = {
+        north: loadedCarNorth,
+        south: loadedCarSouth,
+        east: loadedCarEast,
+        west: loadedCarWest,
+      };
       grassImageRef.current = loadedGrassImg;
       redLightImageRef.current = loadedRedLightImg;
 
       const backgroundCtx = backgroundRef.current.getContext("2d");
       const frontCtx = frontRef.current.getContext("2d");
 
+      // draw the background only once when the component mounts
       backgroundCtx.drawImage(
         grassImageRef.current,
         0,
@@ -113,15 +142,16 @@ const Simulation = () => {
       });
 
       carRef.current.push(
-        new Car(frontRef.current.width / 2 + 20, 0, carImageRef.current)
+        new Car(carImageRef.current, "north", "south", "west")
       );
       
       const spawnInterval = setInterval(() => {
         carRef.current.push(
-          new Car(frontRef.current.width / 2 + 20, 0, carImageRef.current)
+          new Car(carImageRef.current, "north", "south", "west")
         );
       }, 1000);
 
+      // track mouse position
       frontRef.current.addEventListener("mousemove", (event) => {
         const rect = frontRef.current.getBoundingClientRect();
         setX(event.clientX - rect.left);
