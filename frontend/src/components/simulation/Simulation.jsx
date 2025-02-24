@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import grassSrc from "../../assets/finale.png";
+import grassSrc from "../../assets/finale2.png";
 import carSouthSrc from "../../assets/car-south.png";
 import carNorthSrc from "../../assets/car-north.png";
 import carEastSrc from "../../assets/car-east.png";
@@ -109,10 +109,10 @@ const Simulation = () => {
       const lightHeight = 100;
       
       const trafficLightPositions = [
-        { x: backgroundRef.current.width / 2 - 8, y: 194, rotate: false }, // Top
-        { x: backgroundRef.current.width / 2 - 73, y: backgroundRef.current.height - 288, rotate: false }, // Bottom
-        { x: 215, y: backgroundRef.current.height / 2 - 100, rotate: true }, // Left
-        { x: backgroundRef.current.width - 268, y: backgroundRef.current.height / 2 - 36, rotate: true } // Right
+        { x: backgroundRef.current.width / 2 - 8, y: 196, rotate: false }, // Top
+        { x: backgroundRef.current.width / 2 - 73, y: backgroundRef.current.height - 289, rotate: false }, // Bottom
+        { x: 217, y: backgroundRef.current.height / 2 - 100, rotate: true }, // Left
+        { x: backgroundRef.current.width - 269, y: backgroundRef.current.height / 2 - 36, rotate: true } // Right
       ];
 
       trafficLightPositions.forEach(({ x, y, rotate }) => {
