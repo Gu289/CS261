@@ -142,12 +142,18 @@ const Simulation = () => {
       });
 
       carRef.current.push(
-        new Car(carImageRef.current, "north", "south", "west")
+        new Car(carImageRef.current, "north", "east")
       );
       
       const spawnInterval = setInterval(() => {
         carRef.current.push(
-          new Car(carImageRef.current, "north", "south", "west")
+          new Car(carImageRef.current, "east", "south")
+        );
+      }, 1000);
+      
+      const spawnInterval1 = setInterval(() => {
+        carRef.current.push(
+          new Car(carImageRef.current, "west", "north")
         );
       }, 1000);
 
