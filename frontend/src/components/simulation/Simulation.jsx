@@ -71,11 +71,9 @@ const Simulation = () => {
 
   const updateState = () => {
     // remove cars out of bounds
-    carRef.current = carRef.current.filter(car => !(car.x > 600 || car.y > 600 || car.x < 0 || car.y < 0));
-    // global reference to all cars
-    Car.cars = carRef.current;
-    if (carRef.current) {
-      carRef.current.forEach((car) => {
+    Car.cars = Car.cars.filter(car => !(car.x > 600 || car.y > 600 || car.x < 0 || car.y < 0));
+    if (Car.cars.length > 0) {
+      Car.cars.forEach((car) => {
         if (!car.waiting) {
           car.checkJunction();
         } 
@@ -89,8 +87,8 @@ const Simulation = () => {
     frontCtx.clearRect(0, 0, frontRef.current.width, frontRef.current.height);
 
     // check if there are cars to render
-    if (carRef.current && carRef.current.length > 0) {
-      carRef.current.forEach((car) => {
+    if (Car.cars && Car.cars.length > 0) {
+      Car.cars.forEach((car) => {
         try{
           car.draw(frontCtx);
         } catch (error){
@@ -168,22 +166,18 @@ const Simulation = () => {
         
         backgroundCtx.restore();
       });
-
-      carRef.current.push(
-        new Car(carImageRef.current, "north", "east")
-      );
+      new Car(carImageRef.current, "north", "east")
+      
       
       const spawnInterval = setInterval(() => {
-        carRef.current.push(
-          new Car(carImageRef.current, "east", "south")
-        );
+        new Car(carImageRef.current, "east", "south")
       }, 1000);
       
-      const spawnInterval1 = setInterval(() => {
-        carRef.current.push(
-          new Car(carImageRef.current, "west", "north")
-        );
-      }, 1000);
+      // const spawnInterval1 = setInterval(() => {
+      //   carRef.current.push(
+      //     new Car(carImageRef.current, "west", "north")
+      //   );
+      // }, 1000);
 
       // track mouse position
       frontRef.current.addEventListener("mousemove", (event) => {

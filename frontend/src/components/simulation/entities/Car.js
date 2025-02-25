@@ -54,6 +54,8 @@ export default class Car{
         this.waiting = false;
         this.direction = Car.directions[(this.spawnCardinal + 2) % 4];
         this.junctionDistance = null;
+        Car.cars.push(this);
+        this.id = Car.cars.length;
     }
 
     // checks if car has reached the junction 
@@ -111,9 +113,33 @@ export default class Car{
     }
 
    // move the car to the direction it is facing
-    move(){
-        this.x += Math.cos(this.direction) * Car.speed;
-        this.y += Math.sin(this.direction) * Car.speed;
+   move() {
+
+        const safeDistance = 40;
+
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+
+        const carInFront = Car.cars.some(car => {
+            if(car.id === this.id) return false;
+
+            const otherCenterX = car.x + car.width / 2;
+            const otherCenterY = car.y + car.height / 2;
+
+            const dx = otherCenterX - centerX;
+            const dy = otherCenterY - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            const angleToOther = Math.atan2(dy, dx);
+            const angleDifference = Math.abs(angleToOther - this.direction);
+
+            return distance < safeDistance && angleDifference < Math.PI / 8;
+        })
+
+        if(!carInFront){
+            this.x += Math.cos(this.direction) * Car.speed;
+            this.y += Math.sin(this.direction) * Car.speed;
+        }
     }
 
     // render the car sprite
