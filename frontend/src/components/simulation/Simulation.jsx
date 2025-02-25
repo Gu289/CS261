@@ -6,8 +6,14 @@ import carEastSrc from "../../assets/car-east.png";
 import carWestSrc from "../../assets/car-west.png";
 import redLightSrc from "../../assets/red-light.png"; // Import traffic light
 import Car from './entities/Car';
+import { FaRegPauseCircle } from "react-icons/fa";
+import { FaRegPlayCircle } from "react-icons/fa";
 
 const Simulation = () => {
+
+  const isPausedRef = useRef(false);
+
+  const [isPaused, setIsPaused] = useState(false);
 
   // track mouse position
   const [x, setX] = useState(0);
@@ -37,8 +43,25 @@ const Simulation = () => {
     });
   };
 
+  const togglePause = () => {
+    isPausedRef.current = !isPausedRef.current;
+    setIsPaused(!isPaused)
+
+  }
+
   const animationLoop = (frontCtx, backgroundCtx) => {
-    updateState();
+    // if(!isPausedRef.current){
+    //   updateState();
+    //   renderFrame(frontCtx);
+    //   animationFrameRef.current = requestAnimationFrame(() =>
+    //     animationLoop(frontCtx, backgroundCtx)
+    //   );  
+    // } else{
+    //   cancelAnimationFrame(animationFrameRef.current);
+    // }
+    if(!isPausedRef.current){
+      updateState();
+    }
     renderFrame(frontCtx);
     animationFrameRef.current = requestAnimationFrame(() =>
       animationLoop(frontCtx, backgroundCtx)
@@ -171,7 +194,7 @@ const Simulation = () => {
   }, []);
 
   return (
-    <div className="col-span-2 relative bg-gray-100 overflow-y-hidden p-5 flex justify-center items-center">
+    <div className="col-span-2 relative bg-gray-100 overflow-y-hidden p-5 flex flex-col items-center space-y-4">
       <div className="relative w-[600px] h-[600px]">
         <canvas
           ref={backgroundRef}
@@ -191,6 +214,10 @@ const Simulation = () => {
           x={x}, y={y}
         </h1>
       </div>
+      <nav className='bg-gray-200 w-full shadow-md p-4 rounded-lg flex justify-center items-center'>
+        {!isPaused && <FaRegPauseCircle className='w-6 h-6 cursor-pointer' onClick={togglePause}/>}
+        {isPaused && <FaRegPlayCircle className='w-6 h-6 cursor-pointer' onClick={togglePause}/>}
+      </nav>
     </div>
   );
 };
