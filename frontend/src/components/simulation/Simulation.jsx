@@ -75,7 +75,7 @@ const Simulation = () => {
     if (Car.cars.length > 0) {
       Car.cars.forEach((car) => {
         if (!car.waiting) {
-          car.checkJunction();
+          car.reachedStopLine();
         } 
       });
     }
@@ -166,17 +166,12 @@ const Simulation = () => {
         
         backgroundCtx.restore();
       });
+
       new Car(carImageRef.current, "north", "east")
       
       
-      const spawnInterval = setInterval(() => {
-        new Car(carImageRef.current, "east", "south")
-      }, 1000);
-      
-      // const spawnInterval1 = setInterval(() => {
-      //   carRef.current.push(
-      //     new Car(carImageRef.current, "west", "north")
-      //   );
+      // const spawnInterval = setInterval(() => {
+      //   new Car(carImageRef.current, "east", "south")
       // }, 1000);
 
       // track mouse position

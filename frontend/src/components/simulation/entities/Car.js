@@ -58,63 +58,94 @@ export default class Car{
         this.id = Car.cars.length;
     }
 
-    // checks if car has reached the junction 
-   checkJunction(cars){
 
-    // check if car spawning north has reached the stopping line
-    if(this.spawnCardinal === 0 && this.y + this.height >= Car.junctionStops[this.spawnCardinal]){
-        this.enterJunction();
-    } 
-    else if(this.spawnCardinal === 3 && this.x + this.width >= Car.junctionStops[this.spawnCardinal]){
-        this.enterJunction();
-    } 
-    else if(this.spawnCardinal === 1 && this.x <= Car.junctionStops[this.spawnCardinal]){
-        this.enterJunction();
+    reachedStopLine(){
+        if(this.spawnCardinal === 0 && this.y + this.height >= Car.junctionStops[this.spawnCardinal]){
+            Car.speed = 1
+        } 
+        else if(this.spawnCardinal === 3 && this.x + this.width >= Car.junctionStops[this.spawnCardinal]){
+            Car.speed = 1
+        } 
+        else if(this.spawnCardinal === 1 && this.x <= Car.junctionStops[this.spawnCardinal]){
+            Car.speed = 1
+        }
+        else if(this.spawnCardinal === 2 && this.y <= Car.junctionStops[this.spawnCardinal]){
+            Car.speed = 1
+        }
+        else{
+            this.move();
+        }
     }
-    else if(this.spawnCardinal === 2 && this.y <= Car.junctionStops[this.spawnCardinal]){
-        this.enterJunction();
-    }
-    else{
-        this.move();
-    }
-   }
 
-   // updates the sprite of the car after changing direction
-   updateSprite(){
-    this.img = this.images[Car.cardinalReferences[this.endDirection]];
-    this.width = this.img.width * Car.SCALE;
-    this.height = this.img.height * Car.SCALE;
-   }
+    enterJunction(){
+        if (
+            (this.spawnCardinal === 0 && this.y + this.height >= this.turnY) || // Moving south
+            (this.spawnCardinal === 1 && this.x <= this.turnX) || // Moving west
+            (this.spawnCardinal === 2 && this.y <= this.turnY) || // Moving north
+            (this.spawnCardinal === 3 && this.x + this.width >= this.turnX) // Moving east
+        ) {
+            this.turn(); // Perform turning logic
+        } else {
+            this.move(); // Continue moving if not at turning point
+        }
+    }
+
+//     // checks if car has reached the junction 
+//    checkJunction(){
+
+//     // check if car spawning north has reached the stopping line
+//     if(this.spawnCardinal === 0 && this.y + this.height >= Car.junctionStops[this.spawnCardinal]){
+//         this.enterJunction();
+//     } 
+//     else if(this.spawnCardinal === 3 && this.x + this.width >= Car.junctionStops[this.spawnCardinal]){
+//         this.enterJunction();
+//     } 
+//     else if(this.spawnCardinal === 1 && this.x <= Car.junctionStops[this.spawnCardinal]){
+//         this.enterJunction();
+//     }
+//     else if(this.spawnCardinal === 2 && this.y <= Car.junctionStops[this.spawnCardinal]){
+//         this.enterJunction();
+//     }
+//     else{
+//         this.move();
+//     }
+//    }
+
+//    // updates the sprite of the car after changing direction
+//    updateSprite(){
+//     this.img = this.images[Car.cardinalReferences[this.endDirection]];
+//     this.width = this.img.width * Car.SCALE;
+//     this.height = this.img.height * Car.SCALE;
+//    }
 
    // moves the car in the junction and updates the sprite and direction
-    enterJunction() {
-        if (this.junctionDistance === null) {
-            // Determine the required distance to travel before turning
-            const diff = (this.endDirection - this.spawnCardinal + 4) % 4;
-            if (diff === 1) {
-                this.junctionDistance = Car.limits.short;
-            } else if (diff === 2) {
-                this.junctionDistance = Car.limits.opposite;
-            } else {
-                this.junctionDistance = Car.limits.long;
-            }
-        }
+    // enterJunction() {
+    //     if (this.junctionDistance === null) {
+    //         // Determine the required distance to travel before turning
+    //         const diff = (this.endDirection - this.spawnCardinal + 4) % 4;
+    //         if (diff === 1) {
+    //             this.junctionDistance = Car.limits.short;
+    //         } else if (diff === 2) {
+    //             this.junctionDistance = Car.limits.opposite;
+    //         } else {
+    //             this.junctionDistance = Car.limits.long;
+    //         }
+    //     }
 
-        // Move the car forward while scaling the speed correctly
-        if (this.junctionDistance > 0) {
-            this.junctionDistance -= Car.speed; // Decrease remaining distance
-            this.move();
-        } else {
-            // Car has reached the turn point, update its direction
-            this.updateSprite();
-            this.direction = Car.directions[this.endDirection];
-            this.move();
-        }
-    }
+    //     // Move the car forward while scaling the speed correctly
+    //     if (this.junctionDistance > 0) {
+    //         this.junctionDistance -= Car.speed; // Decrease remaining distance
+    //         this.move();
+    //     } else {
+    //         // Car has reached the turn point, update its direction
+    //         this.updateSprite();
+    //         this.direction = Car.directions[this.endDirection];
+    //         this.move();
+    //     }
+    // }
 
-   // move the car to the direction it is facing
-   move() {
-
+    detectCollision(){
+        
         const safeDistance = 40;
 
         const centerX = this.x + this.width / 2;
@@ -136,7 +167,13 @@ export default class Car{
             return distance < safeDistance && angleDifference < Math.PI / 8;
         })
 
-        if(!carInFront){
+        return carInFront;
+    }
+
+   // move the car to the direction it is facing
+   move() {
+
+        if(!this.detectCollision()){
             this.x += Math.cos(this.direction) * Car.speed;
             this.y += Math.sin(this.direction) * Car.speed;
         }
