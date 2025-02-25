@@ -13,6 +13,7 @@ const Simulation = () => {
 
   const isPausedRef = useRef(false);
 
+  const [speed, setSpeed] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
 
   // track mouse position
@@ -72,7 +73,7 @@ const Simulation = () => {
     if (carRef.current) {
       carRef.current.forEach((car) => {
         if (!car.waiting) {
-          car.checkJunction();
+          car.checkJunction(speed);
         } 
       });
     }
@@ -214,9 +215,19 @@ const Simulation = () => {
           x={x}, y={y}
         </h1>
       </div>
-      <nav className='bg-gray-200 w-full shadow-md p-4 rounded-lg flex justify-center items-center'>
+      <nav className='bg-gray-200 w-full shadow-md p-4 rounded-lg flex justify-center items-center space-x-4'>
         {!isPaused && <FaRegPauseCircle className='w-6 h-6 cursor-pointer' onClick={togglePause}/>}
         {isPaused && <FaRegPlayCircle className='w-6 h-6 cursor-pointer' onClick={togglePause}/>}
+        <select
+          value={speed}
+          onChange={(e) => Car.speed = e.target.value}
+          className='p-2 rounded border'
+        >
+          <option value={0.5}>0.5x</option>
+          <option value={1}>1x</option>
+          <option value={2}>2x</option>
+          <option value={4}>4x</option>
+        </select>
       </nav>
     </div>
   );

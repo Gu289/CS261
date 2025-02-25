@@ -1,7 +1,7 @@
 export default class Car{
     
     static SCALE = 0.02;
-
+    static speed = 1;
     static directions = [
         3 * Math.PI / 2, // facing north
         0, // facing east
@@ -52,7 +52,7 @@ export default class Car{
         this.speed = 1;
         this.waiting = false;
         this.direction = Car.directions[(this.spawnCardinal + 2) % 4];
-        this.junctionDistance = 0;
+        this.junctionDistance = null;
     }
 
     // checks if car has reached the junction 
@@ -83,34 +83,35 @@ export default class Car{
    }
 
    // moves the car in the junction and updates the sprite and direction
-   enterJunction(){
-
-    let distance = 0;
-    // check if car needs to turn left, right or go straight
-    // const diff = Math.abs((this.spawnCardinal - this.endDirection) % 4);
-    const diff = (this.endDirection - this.spawnCardinal + 4) % 4
-        if(diff === 1){
-            distance = Car.limits.short;
-        } else if(diff === 2){
-            distance = Car.limits.opposite;
-        } else{
-            distance = Car.limits.long;
+    enterJunction() {
+        if (this.junctionDistance === null) {
+            // Determine the required distance to travel before turning
+            const diff = (this.endDirection - this.spawnCardinal + 4) % 4;
+            if (diff === 1) {
+                this.junctionDistance = Car.limits.short;
+            } else if (diff === 2) {
+                this.junctionDistance = Car.limits.opposite;
+            } else {
+                this.junctionDistance = Car.limits.long;
+            }
         }
 
-    if(this.junctionDistance < distance){
-        this.move();
-        this.junctionDistance += 1
-    } else{
-        this.updateSprite();
-        this.direction = Car.directions[this.endDirection];
-        this.move();
+        // Move the car forward while scaling the speed correctly
+        if (this.junctionDistance > 0) {
+            this.junctionDistance -= Car.speed; // Decrease remaining distance
+            this.move();
+        } else {
+            // Car has reached the turn point, update its direction
+            this.updateSprite();
+            this.direction = Car.directions[this.endDirection];
+            this.move();
+        }
     }
-   }
 
    // move the car to the direction it is facing
     move(){
-        this.x += Math.cos(this.direction) * this.speed;
-        this.y += Math.sin(this.direction) * this.speed;
+        this.x += Math.cos(this.direction) * Car.speed;
+        this.y += Math.sin(this.direction) * Car.speed;
     }
 
     // render the car sprite
