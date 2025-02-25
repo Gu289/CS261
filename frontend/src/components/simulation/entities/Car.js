@@ -1,13 +1,13 @@
 export default class Car{
-    
-    static cars = []
-    static SCALE = 0.02;
+
+    static scale = 0.02;
     static speed = 1;
-    static directions = [
+    static cars = [];
+    static angles = [
         3 * Math.PI / 2, // facing north
         0, // facing east
         Math.PI / 2, // facing south
-        Math.PI // facing west
+        Math.PI // facing
     ]
 
     static spawns = [
@@ -16,19 +16,6 @@ export default class Car{
         {x: 247, y: 600}, // south
         {x: 0, y: 273} // west
     ]
-
-    static junctionStops = [
-        233, // north
-        363, // east
-        365, // south
-        230 // west
-    ]
-
-    static limits = {
-        short: 55, // turning left
-        long: 115, // turning right
-        opposite: 0 // going straight
-    }
 
     static cardinalReferences = {
         north: 0,
@@ -40,149 +27,65 @@ export default class Car{
         2: "south",
         3: "west"
     }
-    
-    constructor(images, spawnCardinal, endDirection){
+
+
+    static bezier = {
+        p0: {x:310, y:0},
+        p1: {x:310, y:300},
+        p2: {x:600, y:300},
+    }
+
+    constructor(images, spawnCardinal, endCardinal){
         this.spawnCardinal = Car.cardinalReferences[spawnCardinal];
-        this.endDirection = Car.cardinalReferences[endDirection];
+        this.endDirection = Car.cardinalReferences[endCardinal];
         this.x = Car.spawns[this.spawnCardinal].x;
         this.y = Car.spawns[this.spawnCardinal].y;
-        this.img = images[Car.cardinalReferences[(this.spawnCardinal + 2) % 4]];
-        this.images = images;
-        this.width = this.img ? this.img.width * Car.SCALE : 0;
-        this.height = this.img ? this.img.height * Car.SCALE : 0;
-        this.speed = 1;
-        this.waiting = false;
-        this.direction = Car.directions[(this.spawnCardinal + 2) % 4];
-        this.junctionDistance = null;
+        this.img = images;
+        this.width = this.img.width * Car.scale;
+        this.height = this.img.height * Car.scale;
+        this.angle = Car.angles[(this.spawnCardinal + 2) % 4]
         Car.cars.push(this);
         this.id = Car.cars.length;
+        this.waiting = false;
+        this.t = 0;
     }
 
+    move(){
 
-    reachedStopLine(){
-        if(this.spawnCardinal === 0 && this.y + this.height >= Car.junctionStops[this.spawnCardinal]){
-            Car.speed = 1
-        } 
-        else if(this.spawnCardinal === 3 && this.x + this.width >= Car.junctionStops[this.spawnCardinal]){
-            Car.speed = 1
-        } 
-        else if(this.spawnCardinal === 1 && this.x <= Car.junctionStops[this.spawnCardinal]){
-            Car.speed = 1
-        }
-        else if(this.spawnCardinal === 2 && this.y <= Car.junctionStops[this.spawnCardinal]){
-            Car.speed = 1
-        }
-        else{
-            this.move();
-        }
-    }
+        if(this.t < 1){
+            const {x, y} = this.getBezierPoint(this.t, Car.bezier.p0, Car.bezier.p1, Car.bezier.p2);
 
-    enterJunction(){
-        if (
-            (this.spawnCardinal === 0 && this.y + this.height >= this.turnY) || // Moving south
-            (this.spawnCardinal === 1 && this.x <= this.turnX) || // Moving west
-            (this.spawnCardinal === 2 && this.y <= this.turnY) || // Moving north
-            (this.spawnCardinal === 3 && this.x + this.width >= this.turnX) // Moving east
-        ) {
-            this.turn(); // Perform turning logic
-        } else {
-            this.move(); // Continue moving if not at turning point
+            this.x = x;
+            this.y = y;
+
+            let nextT = this.t + 0.01;
+            if (nextT > 1) {
+                nextT = 1;
+            }
+
+            let {x: nextX, y: nextY} = this.getBezierPoint(nextT, Car.bezier.p0, Car.bezier.p1, Car.bezier.p2);
+            this.angle = Math.atan2(nextY - y, nextX - x);
+            this.t += 0.01;
+        } else{
+            this.x += Math.cos(this.angle) * Car.speed;
+            this.y += Math.sin(this.angle) * Car.speed;
         }
     }
-
-//     // checks if car has reached the junction 
-//    checkJunction(){
-
-//     // check if car spawning north has reached the stopping line
-//     if(this.spawnCardinal === 0 && this.y + this.height >= Car.junctionStops[this.spawnCardinal]){
-//         this.enterJunction();
-//     } 
-//     else if(this.spawnCardinal === 3 && this.x + this.width >= Car.junctionStops[this.spawnCardinal]){
-//         this.enterJunction();
-//     } 
-//     else if(this.spawnCardinal === 1 && this.x <= Car.junctionStops[this.spawnCardinal]){
-//         this.enterJunction();
-//     }
-//     else if(this.spawnCardinal === 2 && this.y <= Car.junctionStops[this.spawnCardinal]){
-//         this.enterJunction();
-//     }
-//     else{
-//         this.move();
-//     }
-//    }
-
-//    // updates the sprite of the car after changing direction
-//    updateSprite(){
-//     this.img = this.images[Car.cardinalReferences[this.endDirection]];
-//     this.width = this.img.width * Car.SCALE;
-//     this.height = this.img.height * Car.SCALE;
-//    }
-
-   // moves the car in the junction and updates the sprite and direction
-    // enterJunction() {
-    //     if (this.junctionDistance === null) {
-    //         // Determine the required distance to travel before turning
-    //         const diff = (this.endDirection - this.spawnCardinal + 4) % 4;
-    //         if (diff === 1) {
-    //             this.junctionDistance = Car.limits.short;
-    //         } else if (diff === 2) {
-    //             this.junctionDistance = Car.limits.opposite;
-    //         } else {
-    //             this.junctionDistance = Car.limits.long;
-    //         }
-    //     }
-
-    //     // Move the car forward while scaling the speed correctly
-    //     if (this.junctionDistance > 0) {
-    //         this.junctionDistance -= Car.speed; // Decrease remaining distance
-    //         this.move();
-    //     } else {
-    //         // Car has reached the turn point, update its direction
-    //         this.updateSprite();
-    //         this.direction = Car.directions[this.endDirection];
-    //         this.move();
-    //     }
-    // }
-
-    detectCollision(){
-        
-        const safeDistance = 40;
-
-        const centerX = this.x + this.width / 2;
-        const centerY = this.y + this.height / 2;
-
-        const carInFront = Car.cars.some(car => {
-            if(car.id === this.id) return false;
-
-            const otherCenterX = car.x + car.width / 2;
-            const otherCenterY = car.y + car.height / 2;
-
-            const dx = otherCenterX - centerX;
-            const dy = otherCenterY - centerY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            const angleToOther = Math.atan2(dy, dx);
-            const angleDifference = Math.abs(angleToOther - this.direction);
-
-            return distance < safeDistance && angleDifference < Math.PI / 8;
-        })
-
-        return carInFront;
+ 
+    getBezierPoint(t, P0, P1, P2){
+        const x = (1 - t) ** 2 * P0.x + 2 * (1 - t) * t * P1.x + t ** 2 * P2.x;
+        const y = (1 - t) ** 2 * P0.y + 2 * (1 - t) * t * P1.y + t ** 2 * P2.y;
+        return { x, y };
     }
 
-   // move the car to the direction it is facing
-   move() {
-
-        if(!this.detectCollision()){
-            this.x += Math.cos(this.direction) * Car.speed;
-            this.y += Math.sin(this.direction) * Car.speed;
-        }
-    }
-
-    // render the car sprite
     draw(ctx){
         if(this.img.complete){
-            ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
+            ctx.save();
+            ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+            ctx.rotate(this.angle);
+            ctx.drawImage(this.img, -this.width / 2, -this.height / 2, this.width, this.height);
+            ctx.restore();
         }
     }
+
 }

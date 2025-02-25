@@ -1,9 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import grassSrc from "../../assets/finale2.png";
-import carSouthSrc from "../../assets/car-south.png";
-import carNorthSrc from "../../assets/car-north.png";
 import carEastSrc from "../../assets/car-east.png";
-import carWestSrc from "../../assets/car-west.png";
 import redLightSrc from "../../assets/red-light.png"; // Import traffic light
 import Car from './entities/Car';
 import { FaRegPauseCircle } from "react-icons/fa";
@@ -23,16 +20,13 @@ const Simulation = () => {
   // store animation frame ID
   const animationFrameRef = useRef(null);
   
-  // store array of cars
-  const carRef = useRef([]);
-  
   // reference canvas background and front layers
   const backgroundRef = useRef(null);
   const frontRef = useRef(null);
 
   // reference images
   const grassImageRef = useRef(null);
-  const carImageRef = useRef({});
+  const carImageRef = useRef(null);
   const redLightImageRef = useRef(null);
 
   // load images asynchronously
@@ -71,11 +65,11 @@ const Simulation = () => {
 
   const updateState = () => {
     // remove cars out of bounds
-    Car.cars = Car.cars.filter(car => !(car.x > 600 || car.y > 600 || car.x < 0 || car.y < 0));
+    // Car.cars = Car.cars.filter(car => !(car.x > 600 || car.y > 600 || car.x < 0 || car.y < 0));
     if (Car.cars.length > 0) {
       Car.cars.forEach((car) => {
         if (!car.waiting) {
-          car.reachedStopLine();
+          car.move();
         } 
       });
     }
@@ -100,22 +94,13 @@ const Simulation = () => {
 
   useEffect(() => {
     Promise.all([
-      loadImages(carNorthSrc),
-      loadImages(carSouthSrc),
       loadImages(carEastSrc),
-      loadImages(carWestSrc),
       loadImages(grassSrc),
       loadImages(redLightSrc),
-    ]).then(([loadedCarNorth,
-      loadedCarSouth,
+    ]).then(([
       loadedCarEast,
-      loadedCarWest, loadedGrassImg, loadedRedLightImg]) => {
-      carImageRef.current = {
-        north: loadedCarNorth,
-        south: loadedCarSouth,
-        east: loadedCarEast,
-        west: loadedCarWest,
-      };
+      loadedGrassImg, loadedRedLightImg]) => {
+      carImageRef.current = loadedCarEast
       grassImageRef.current = loadedGrassImg;
       redLightImageRef.current = loadedRedLightImg;
 
@@ -170,9 +155,9 @@ const Simulation = () => {
       new Car(carImageRef.current, "north", "east")
       
       
-      // const spawnInterval = setInterval(() => {
-      //   new Car(carImageRef.current, "east", "south")
-      // }, 1000);
+      const spawnInterval = setInterval(() => {
+        new Car(carImageRef.current, "east", "south")
+      }, 1000);
 
       // track mouse position
       frontRef.current.addEventListener("mousemove", (event) => {
