@@ -70,10 +70,14 @@ const Simulation = () => {
   };
 
   const updateState = () => {
+    // remove cars out of bounds
+    carRef.current = carRef.current.filter(car => !(car.x > 600 || car.y > 600 || car.x < 0 || car.y < 0));
+    // global reference to all cars
+    Car.cars = carRef.current;
     if (carRef.current) {
       carRef.current.forEach((car) => {
         if (!car.waiting) {
-          car.checkJunction(speed);
+          car.checkJunction();
         } 
       });
     }
@@ -220,7 +224,10 @@ const Simulation = () => {
         {isPaused && <FaRegPlayCircle className='w-6 h-6 cursor-pointer' onClick={togglePause}/>}
         <select
           value={speed}
-          onChange={(e) => Car.speed = e.target.value}
+          onChange={(e) => {
+            Car.speed = e.target.value
+            setSpeed(e.target.value)
+          }}
           className='p-2 rounded border'
         >
           <option value={0.5}>0.5x</option>

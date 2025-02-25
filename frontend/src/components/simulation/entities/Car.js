@@ -1,5 +1,6 @@
 export default class Car{
     
+    static cars = []
     static SCALE = 0.02;
     static speed = 1;
     static directions = [
@@ -56,7 +57,8 @@ export default class Car{
     }
 
     // checks if car has reached the junction 
-   checkJunction(){
+   checkJunction(cars){
+
     // check if car spawning north has reached the stopping line
     if(this.spawnCardinal === 0 && this.y + this.height >= Car.junctionStops[this.spawnCardinal]){
         this.enterJunction();
