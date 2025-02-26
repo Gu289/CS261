@@ -1,5 +1,5 @@
-import Sidebar from "./Sidebar"
-import Simulation from "./Simulation"
+import Sidebar from "./ui/Sidebar"
+import Simulation from "./simulation/Simulation"
 
 const Home = () => {
 
