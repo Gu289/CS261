@@ -47,7 +47,7 @@ const History = ( { simId }) => {
   useEffect(() => {
     console.log(simId)
     const getData = async () => {
-      const response = await axios.get(`http://127.0.0.1:8000/simulation/get-completed-simulations/?simulation_id=${simId}`)
+      const response = await axios.get(`http://127.0.0.1:8000/simulation/completed-simulations/`)
       console.log(response)
     }
 

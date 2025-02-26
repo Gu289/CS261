@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Link } from "react-router-dom";
 import axios from 'axios';
 
-const Sidebar = ( { handleSimId }) => {
+const Sidebar = ( { handleSimId, handleResults }) => {
 
   // used to efficiently map and return Input Form components
   const directions = ["north", "east", "south", "west"]
@@ -96,6 +96,7 @@ const Sidebar = ( { handleSimId }) => {
         const res = await axios.post(`http://127.0.0.1:8000/simulation/start-simulation/?simulation_id=${sim_id}`)
         console.log(res);
       }
+      return sim_id
     } catch (error) {
       setErrorMsg("Error with the creation of the simulation")
       console.error(error)
@@ -109,15 +110,38 @@ const Sidebar = ( { handleSimId }) => {
 
     // if inputs are valid then send to backend and start the simulation
     if(validateTrafficValues()){
-      createSimulation()
+      createSimulation().then((sim_id) => {
+        const interval = setInterval(async () => {
+          try{
+            const { data } = await axios.get(`http://127.0.0.1:8000/simulation/check-simulation-status/?simulation_id=${sim_id}`)
+            console.log(data);
+            if(data.simulation_status === "completed"){
+              clearInterval(interval)
+              displayResults(data);
+            } else if(data.simulation_status === "failed"){
+              throw "Simulation Failed"
+            }
+          } catch(error){
+            console.error("Error checking simulation status:", error);
+            clearInterval(interval);
+          }
+        }, 3000)
+      })
     }
   }, [startSim])
+
+  const displayResults = (data) => {
+    console.log(data);
+  }
 
   return (
     <div className="bg-background flex flex-col overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700">
       <div className="mt-5 ml-5">
         <Link to="/history"><button type="button" className="bg-button px-8 py-5 rounded-2xl shadow-md text-2xl hover:bg-button-hover transition duration-300 cursor-pointer">History</button></Link>
       </div>
+      <button type="button" onClick={handleResults} className="bg-gray-500">
+        Show Result
+      </button>
       <div className="p-5 flex flex-col gap-5">
         {/* make input form for each direction */}
         {directions.map((direction, index) => (
