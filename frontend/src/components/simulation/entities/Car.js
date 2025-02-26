@@ -56,9 +56,9 @@ export default class Car{
         "0-3": {p0: {x:300, y:215}, p1: {x:300, y:335}, p2: {x:240, y:335}}
     }
 
-    constructor(images, spawnCardinal, endCardinal){
+    constructor(images, spawnCardinal, endDirection){
         this.spawnCardinal = Car.cardinalReferences[spawnCardinal];
-        this.endDirection = Car.cardinalReferences[endCardinal];
+        this.endDirection = Car.cardinalReferences[endDirection];
         // this.x = Car.spawns[this.spawnCardinal].x;
         this.x = 0
         this.y = 0
@@ -75,15 +75,15 @@ export default class Car{
     }
 
     chooseSpawn(){
-        if(this.spawnCardinal + this.endCardinal % 4 === 1){ // right turn
+
+        if(this.spawnCardinal + this.endDirection % 4 === 1){ // right turn
             this.x = Car.spawns[`${this.spawnCardinal}1`].x // second lane
             this.y = Car.spawns[`${this.spawnCardinal}1`].y
-        } else if(this.spawnCardinal + this.endCardinal % 4 === 3){ // left turn
+        } else if(this.spawnCardinal + this.endDirection % 4 === 3){ // left turn
             this.x = Car.spawns[`${this.spawnCardinal}0`].x // first lane
             this.y = Car.spawns[`${this.spawnCardinal}0`].y
         } else{
             const random = Math.floor(Math.random() * 2) // need to change 2 (number of lanes)
-            console.log(random);
             this.x = Car.spawns[`${this.spawnCardinal}${random}`].x
             this.y = Car.spawns[`${this.spawnCardinal}${random}`].y
         }
@@ -98,10 +98,10 @@ export default class Car{
 
     move(){
 
-        if(this.t < 1 && this.isTurning){
+        if(this.t < 1 && this.isTurning && this.spawnCardinal + this.endDirection % 4 !== 2){
 
             const curve = Car.bezierCurves[`${this.spawnCardinal}-${this.endDirection}`];
-
+            
             const {x, y} = this.getBezierPoint(this.t, curve.p0, curve.p1, curve.p2);
 
             this.x = x;
@@ -120,7 +120,6 @@ export default class Car{
                 this.x = curve.p2.x;
                 this.y = curve.p2.y;
     
-                // 🔥 Snap the angle to a perfect direction
                 if (this.endDirection === 3) this.angle = Math.PI; // Left (west)
                 else if (this.endDirection === 1) this.angle = 0;   // Right (east)
                 else if (this.endDirection === 2) this.angle = Math.PI / 2;  // Down (south)
@@ -148,7 +147,7 @@ export default class Car{
             ctx.drawImage(this.img, -this.width / 2, -this.height / 2, this.width, this.height);
             ctx.restore();
 
-            this.drawBezier(ctx);
+            // this.drawBezier(ctx);
         }
     }
 

@@ -8,6 +8,21 @@ import { FaRegPlayCircle } from "react-icons/fa";
 
 const Simulation = () => {
 
+  const trafficFlow = [
+    {from: "north", to: "east", vph: 1000},
+    // {from: "north", to: "south", vph: 180},
+    // {from: "north", to: "west", vph: 180},
+    // {from: "east", to: "south", vph: 180},
+    // {from: "east", to: "west", vph: 180},
+    // {from: "east", to: "north", vph: 180},
+    // {from: "south", to: "west", vph: 180},
+    // {from: "south", to: "north", vph: 180},
+    // {from: "south", to: "east", vph: 180},
+    // {from: "west", to: "north", vph: 180},
+    // {from: "west", to: "east", vph: 180},
+    // {from: "west", to: "south", vph: 180},
+  ]
+
   const isPausedRef = useRef(false);
 
   const [speed, setSpeed] = useState(1);
@@ -28,6 +43,7 @@ const Simulation = () => {
   const grassImageRef = useRef(null);
   const carImageRef = useRef(null);
   const redLightImageRef = useRef(null);
+
 
   // load images asynchronously
   const loadImages = (src) => {
@@ -92,6 +108,22 @@ const Simulation = () => {
     }
   };
 
+  const spawnIntervals = useRef({});
+
+  const generateCars = (start, end, vph) => {
+    
+    const key = `${start}-${end}`
+
+    if(spawnIntervals.current[key]) clearInterval(spawnIntervals.current[key]);
+
+    const intervalTime = (3600 * 1000) / vph;
+
+    spawnIntervals.current[key] = setInterval(() => {
+      new Car(carImageRef.current, start, end);
+    }, intervalTime)
+
+  }
+
   useEffect(() => {
     Promise.all([
       loadImages(carEastSrc),
@@ -152,16 +184,19 @@ const Simulation = () => {
         backgroundCtx.restore();
       });
 
-      new Car(carImageRef.current, "north", "west")
-      new Car(carImageRef.current, "north", "east")
+      // new Car(carImageRef.current, "north", "west")
+      // new Car(carImageRef.current, "north", "east")
+      // new Car(carImageRef.current, "north", "south")
       
-      const spawnInterval = setInterval(() => {
-        new Car(carImageRef.current, "north", "west")
-      }, 1000);
+      // const spawnInterval = setInterval(() => {
+      //   new Car(carImageRef.current, "north", "west")
+      // }, 1000);
 
-      const spawnInterval1 = setInterval(() => {
-        new Car(carImageRef.current, "north", "east")
-      }, 1000);
+      // const spawnInterval1 = setInterval(() => {
+      //   new Car(carImageRef.current, "north", "east")
+      // }, 1000);
+
+      trafficFlow.forEach(({ from, to, vph }) => generateCars(from, to, vph))
 
       // track mouse position
       frontRef.current.addEventListener("mousemove", (event) => {

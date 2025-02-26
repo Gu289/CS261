@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Link } from "react-router-dom";
 import axios from 'axios';
 
-const Sidebar = () => {
+const Sidebar = ( { handleSimId }) => {
 
   // used to efficiently map and return Input Form components
   const directions = ["north", "east", "south", "west"]
@@ -91,6 +91,7 @@ const Sidebar = () => {
     try {
       const response = await axios.post("http://127.0.0.1:8000/simulation/create-simulation/",trafficData);
       const sim_id = response.data.simulation_id
+      handleSimId(sim_id)
       if(response.status === 200){
         const res = await axios.post(`http://127.0.0.1:8000/simulation/start-simulation/?simulation_id=${sim_id}`)
         console.log(res);
