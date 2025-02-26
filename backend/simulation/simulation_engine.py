@@ -354,7 +354,8 @@ class SimulationEngine:
         self.junction_config = simulation.junction_config
         self.vehicle_warehouse = VehiclesWarehouse(self.junction_config, 2)
         self.junction = Junction(self.junction_config, self.vehicle_warehouse, traffic_light_cycle_time)
-
+        self.simulation = Simulation
+        
     @classmethod
     def compute_AWT_MWT(cls, path_to_queries):
         with open(path_to_queries, "r") as file:
