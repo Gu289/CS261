@@ -8,6 +8,7 @@ urlpatterns = [
     path('start-simulation/', start_simulation),
     path('check-simulation-status/', check_simulation_status),
     path('completed-simulations/', get_completed_simulations),
+    path('completed-simulation/', get_completed_simulation),
     path('delete-simulation/', delete_simulation),
     path('test-background-task/', test_background_task),
 ]

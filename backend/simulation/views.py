@@ -141,6 +141,29 @@ def get_completed_simulations(request):
         return JsonResponse(serializer.data,status=200, safe=False)
     return JsonResponse({"Error": "Invalid request method"},status=405)
 
+def get_completed_simulation(request):
+    if request.method == 'GET':
+        simulation_id = request.GET.get('simulation_id')
+        try:
+            simulation = Simulation.objects.get(simulation_id=simulation_id)
+        except Simulation.DoesNotExist:
+            error_message = {
+                "Error": f"Simulation id {simulation_id} not found",
+                "simulation_status": "Not found"
+            }
+
+        if simulation.simulation_status == "completed":
+            serializer = SimulationSerializer(simulation)
+            return JsonResponse(serializer.data,status=200)
+        else:
+            error_message = {
+                "Error": f"Simulation id {simulation_id} is not completed",
+                "simulation_status": "Not completed"
+            }
+            return JsonResponse(error_message,status=400)
+    else:
+        return JsonResponse({"Error": "Invalid request method"},status=405)
+
 def delete_simulation(request):
     '''
     This function is called when a DELETE request is made to the /delete-simulation/ endpoint.
