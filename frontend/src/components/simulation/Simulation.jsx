@@ -69,7 +69,7 @@ const Simulation = () => {
     if (Car.cars.length > 0) {
       Car.cars.forEach((car) => {
         if (!car.waiting) {
-          car.move();
+          car.updateCar();
         } 
       });
     }
@@ -152,11 +152,15 @@ const Simulation = () => {
         backgroundCtx.restore();
       });
 
+      new Car(carImageRef.current, "north", "west")
       new Car(carImageRef.current, "north", "east")
       
-      
       const spawnInterval = setInterval(() => {
-        new Car(carImageRef.current, "east", "south")
+        new Car(carImageRef.current, "north", "west")
+      }, 1000);
+
+      const spawnInterval1 = setInterval(() => {
+        new Car(carImageRef.current, "north", "east")
       }, 1000);
 
       // track mouse position
