@@ -18,34 +18,34 @@ from simulation.models import Vehicle, Simulation
 n = 2  # Number of lanes
 stop_event = threading.Event()
 
-junction_config = {
-    "north": {
-        "inbound": 1500,
-        "east": 500,
-        "south": 200,
-        "west": 800
-    },
-    "east": {
-        "inbound": 550,
-        "north": 200,
-        "south": 150,
-        "west": 200
-    },
-    "south": {
-        "inbound": 450,
-        "north": 100,
-        "east":50,
-        "west": 300
-    },
-    "west": {
-        "inbound": 620,
-        "north": 400,
-        "east": 170,
-        "south": 50
-    },
-    "leftTurn": False,
-    "numLanes": 2
-}
+# junction_config = {
+#     "north": {
+#         "inbound": 1500,
+#         "east": 500,
+#         "south": 200,
+#         "west": 800
+#     },
+#     "east": {
+#         "inbound": 550,
+#         "north": 200,
+#         "south": 150,
+#         "west": 200
+#     },
+#     "south": {
+#         "inbound": 450,
+#         "north": 100,
+#         "east":50,
+#         "west": 300
+#     },
+#     "west": {
+#         "inbound": 620,
+#         "north": 400,
+#         "east": 170,
+#         "south": 50
+#     },
+#     "leftTurn": False,
+#     "numLanes": 2
+# }
 
 class TrafficLight:
     def __init__(self, cycle_time=3):
@@ -77,7 +77,7 @@ class TrafficLight:
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} Traffic Light] A thread for a traffic light has started.")
 
 class Enqueuer:
-    def __init__(self, traffic_dict, locks_dict, vehicle_warehouse, junction_config=junction_config):
+    def __init__(self, traffic_dict, locks_dict, vehicle_warehouse, junction_config):
         self.traffic_dict = traffic_dict
         self.junction_config = junction_config
         self.locks_dict = locks_dict
@@ -220,7 +220,7 @@ class VehiclesWarehouse:
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Warehouse has been stocked with vehicles.")
 
     def vehicleBuilder(self, incoming_direction:str, exit_direction:str) -> Vehicle:
-        lane_count = junction_config["numLanes"]
+        lane_count = self.junction_config["numLanes"]
         random_lane = random.randint(0,  lane_count - 1)
         relative_dir = Vehicle.get_relative_dir(incoming_direction, exit_direction)
         match relative_dir:
@@ -232,13 +232,13 @@ class VehiclesWarehouse:
                 incoming_lane = lane_count - 1
             case _:
                 incoming_lane = random_lane
-                
+    # should be random for all cases
         
         vehicle = {
             "incoming_direction": incoming_direction,
             "exit_direction": exit_direction,
             "incoming_lane": incoming_lane,
-            "exit_lane": list(range(lane_count))[::-1][incoming_lane]
+            "exit_lane": list(range(lane_count))[::-1][incoming_lane]   
         }
 
         vehicle = Vehicle.objects.create(**vehicle)
@@ -352,8 +352,8 @@ class Junction:
 class SimulationEngine:
     def __init__(self, simulation:Simulation, traffic_light_cycle_time=3):
         self.junction_config = simulation.junction_config
-        self.vehicle_warehouse = VehiclesWarehouse(junction_config, 2)
-        self.junction = Junction(junction_config, self.vehicle_warehouse, traffic_light_cycle_time)
+        self.vehicle_warehouse = VehiclesWarehouse(self.junction_config, 2)
+        self.junction = Junction(self.junction_config, self.vehicle_warehouse, traffic_light_cycle_time)
 
     @classmethod
     def compute_AWT_MWT(cls, path_to_queries):
@@ -373,6 +373,7 @@ class SimulationEngine:
 
         return metrics
     
+  
     def start(self):
         '''
         Run the simulation and return the metrics upon completion.
@@ -389,6 +390,12 @@ class SimulationEngine:
             metrics = SimulationEngine.compute_AWT_MWT(path_to_queries)
             for dir in metrics:
                 metrics[dir]["max_queue_length"] = self.junction.max_queue_length_tracker[dir]
+
+            # Save metrics to the Simulation record,
+            # assuming you have a JSONField or similar
+            self.simulation.metrics = metrics
+            self.simulation.simulation_status = 'Completed'
+            self.simulation.save()
 
             return metrics
 
