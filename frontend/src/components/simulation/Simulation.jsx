@@ -2,7 +2,9 @@ import { useRef, useEffect, useState } from 'react';
 import grassSrc from "../../assets/finale2.png";
 import carEastSrc from "../../assets/car-east.png";
 import redLightSrc from "../../assets/red-light.png"; // Import traffic light
+import greenLightSrc from "../../assets/green-light.png";
 import Car from './entities/Car';
+import TrafficLight from './entities/TrafficLight';
 import { FaRegPauseCircle } from "react-icons/fa";
 import { FaRegPlayCircle } from "react-icons/fa";
 
@@ -12,15 +14,15 @@ const Simulation = () => {
     {from: "north", to: "east", vph: 1000},
     {from: "north", to: "south", vph: 1000},
     {from: "north", to: "west", vph: 1000},
-    {from: "east", to: "south", vph: 1000},
-    {from: "east", to: "west", vph: 1000},
-    {from: "east", to: "north", vph: 1000},
-    {from: "south", to: "west", vph: 1000},
-    {from: "south", to: "north", vph: 1000},
-    {from: "south", to: "east", vph: 1000},
-    {from: "west", to: "north", vph: 1000},
-    {from: "west", to: "east", vph: 1000},
-    {from: "west", to: "south", vph: 1000},
+    {from: "east", to: "south", vph: 900},
+    {from: "east", to: "west", vph: 900},
+    {from: "east", to: "north", vph: 900},
+    {from: "south", to: "west", vph: 800},
+    {from: "south", to: "north", vph: 800},
+    {from: "south", to: "east", vph: 800},
+    {from: "west", to: "north", vph: 700},
+    {from: "west", to: "east", vph: 700},
+    {from: "west", to: "south", vph: 700},
   ]
 
   const isPausedRef = useRef(false);
@@ -43,7 +45,9 @@ const Simulation = () => {
   const grassImageRef = useRef(null);
   const carImageRef = useRef(null);
   const redLightImageRef = useRef(null);
+  const greenLightImageRef = useRef(null);
 
+  const greenLightStates = useRef([]);
 
   // load images asynchronously
   const loadImages = (src) => {
@@ -73,6 +77,7 @@ const Simulation = () => {
   const updateState = () => {
     // remove cars out of bounds
     Car.cars = Car.cars.filter(car => !(car.x > 600 || car.y > 600 || car.x < 0 || car.y < 0));
+    
     if (Car.cars.length > 0) {
       Car.cars.forEach((car) => {
         if (!car.waiting) {
@@ -86,6 +91,11 @@ const Simulation = () => {
     
     // clear canvas
     frontCtx.clearRect(0, 0, frontRef.current.width, frontRef.current.height);
+
+    greenLightStates.current.forEach((trafficLight) => {
+      console.log(trafficLight);
+      trafficLight.draw(frontCtx);
+    })
 
     // check if there are cars to render
     if (Car.cars && Car.cars.length > 0) {
@@ -120,13 +130,17 @@ const Simulation = () => {
       loadImages(carEastSrc),
       loadImages(grassSrc),
       loadImages(redLightSrc),
+      loadImages(greenLightSrc)
     ]).then(([
       loadedCarEast,
-      loadedGrassImg, loadedRedLightImg]) => {
+      loadedGrassImg, 
+      loadedRedLightImg,
+      loadedGreenLightImg
+    ]) => {
       carImageRef.current = loadedCarEast
       grassImageRef.current = loadedGrassImg;
       redLightImageRef.current = loadedRedLightImg;
-
+      greenLightImageRef.current = loadedGreenLightImg;
       const backgroundCtx = backgroundRef.current.getContext("2d");
       const frontCtx = frontRef.current.getContext("2d");
 
@@ -175,6 +189,10 @@ const Simulation = () => {
         backgroundCtx.restore();
       });
 
+      for(let i=0;i<4;i++){
+        greenLightStates.current.push(new TrafficLight(greenLightImageRef.current, i))
+      }
+
       // new Car(carImageRef.current, "east", "north")
       // new Car(carImageRef.current, "north", "east")
       // new Car(carImageRef.current, "north", "south")
@@ -188,7 +206,7 @@ const Simulation = () => {
       // }, 1000);
 
       trafficFlow.forEach(({ from, to, vph }) => {
-        console.log(from, to, vph)
+        // console.log(from, to, vph)
         generateCars(from, to, vph)
       
       })

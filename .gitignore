@@ -43,3 +43,5 @@ htmlcov/
 
 # Django cache files
 *.cache/
+
+celerydb.sqlite
