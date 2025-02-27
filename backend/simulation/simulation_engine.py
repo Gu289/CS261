@@ -237,12 +237,15 @@ class VehiclesWarehouse:
             case Vehicle.TURNING_LEFT:
                 incoming_lane = 0
             case Vehicle.GOING_STRAIGHT:
-                incoming_lane = random_lane
+                if self.junction_config["leftTurn"]:
+                    # For straight, use any lane except left turn lane (which is 0)
+                    incoming_lane = random.randint(1, lane_count - 1)
+                else:
+                    incoming_lane = random_lane
             case Vehicle.TURNING_RIGHT:
                 incoming_lane = lane_count - 1
             case _:
                 incoming_lane = random_lane
-    # should be random for all cases
         
         vehicle = {
             "incoming_direction": incoming_direction,
