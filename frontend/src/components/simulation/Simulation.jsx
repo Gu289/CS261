@@ -44,10 +44,7 @@ const Simulation = () => {
   // reference images
   const grassImageRef = useRef(null);
   const carImageRef = useRef(null);
-  const redLightImageRef = useRef(null);
-  const greenLightImageRef = useRef(null);
-
-  const greenLightStates = useRef([]);
+  const lightImageRef = useRef({});
 
   // load images asynchronously
   const loadImages = (src) => {
@@ -92,10 +89,15 @@ const Simulation = () => {
     // clear canvas
     frontCtx.clearRect(0, 0, frontRef.current.width, frontRef.current.height);
 
-    greenLightStates.current.forEach((trafficLight) => {
-      console.log(trafficLight);
-      trafficLight.draw(frontCtx);
-    })
+    if(TrafficLight.instances && TrafficLight.instances.length > 0){
+      TrafficLight.instances.forEach((light) => {
+        try{
+          light.draw(frontCtx);
+        } catch(error){
+          console.error("Error drawing traffic light:", error)
+        }
+      })
+    }
 
     // check if there are cars to render
     if (Car.cars && Car.cars.length > 0) {
@@ -139,8 +141,11 @@ const Simulation = () => {
     ]) => {
       carImageRef.current = loadedCarEast
       grassImageRef.current = loadedGrassImg;
-      redLightImageRef.current = loadedRedLightImg;
-      greenLightImageRef.current = loadedGreenLightImg;
+      lightImageRef.current = {
+        red: loadedRedLightImg,
+        green: loadedGreenLightImg
+      }
+
       const backgroundCtx = backgroundRef.current.getContext("2d");
       const frontCtx = frontRef.current.getContext("2d");
 
@@ -153,45 +158,50 @@ const Simulation = () => {
         backgroundRef.current.height
       );
 
-      const lightWidth = 50;
-      const lightHeight = 100;
+      // const lightWidth = 50;
+      // const lightHeight = 100;
       
-      const trafficLightPositions = [
-        { x: backgroundRef.current.width / 2 - 8, y: 196, rotate: false }, // Top
-        { x: backgroundRef.current.width / 2 - 73, y: backgroundRef.current.height - 289, rotate: false }, // Bottom
-        { x: 217, y: backgroundRef.current.height / 2 - 100, rotate: true }, // Left
-        { x: backgroundRef.current.width - 269, y: backgroundRef.current.height / 2 - 36, rotate: true } // Right
-      ];
+      // const trafficLightPositions = [
+      //   { x: backgroundRef.current.width / 2 - 8, y: 196, rotate: false }, // Top
+      //   { x: backgroundRef.current.width / 2 - 73, y: backgroundRef.current.height - 289, rotate: false }, // Bottom
+      //   { x: 217, y: backgroundRef.current.height / 2 - 100, rotate: true }, // Left
+      //   { x: backgroundRef.current.width - 269, y: backgroundRef.current.height / 2 - 36, rotate: true } // Right
+      // ];
 
-      trafficLightPositions.forEach(({ x, y, rotate }) => {
-        backgroundCtx.save();
+      // trafficLightPositions.forEach(({ x, y, rotate }) => {
+      //   backgroundCtx.save();
         
-        if (rotate) {
-          backgroundCtx.translate(x + lightWidth / 2, y + lightHeight / 2);
-          backgroundCtx.rotate(Math.PI / 2);
-          backgroundCtx.drawImage(
-            redLightImageRef.current,
-            -lightWidth / 2,
-            -lightHeight / 2,
-            lightWidth + 35,
-            lightHeight
-          );
-        } else {
-          backgroundCtx.drawImage(
-            redLightImageRef.current,
-            x,
-            y,
-            lightWidth + 30,
-            lightHeight
-          );
-        }
+      //   if (rotate) {
+      //     backgroundCtx.translate(x + lightWidth / 2, y + lightHeight / 2);
+      //     backgroundCtx.rotate(Math.PI / 2);
+      //     backgroundCtx.drawImage(
+      //       redLightImageRef.current,
+      //       -lightWidth / 2,
+      //       -lightHeight / 2,
+      //       lightWidth + 35,
+      //       lightHeight
+      //     );
+      //   } else {
+      //     backgroundCtx.drawImage(
+      //       redLightImageRef.current,
+      //       x,
+      //       y,
+      //       lightWidth + 30,
+      //       lightHeight
+      //     );
+      //   }
         
-        backgroundCtx.restore();
-      });
+      //   backgroundCtx.restore();
+      // });
 
-      for(let i=0;i<4;i++){
-        greenLightStates.current.push(new TrafficLight(greenLightImageRef.current, i))
-      }
+      // for(let i=0;i<4;i++){
+      //   greenLightStates.current.push(new TrafficLight(greenLightImageRef.current, i))
+      // }
+
+      new TrafficLight(lightImageRef.current, 0)
+      new TrafficLight(lightImageRef.current, 1)
+      new TrafficLight(lightImageRef.current, 2)
+      new TrafficLight(lightImageRef.current, 3)
 
       // new Car(carImageRef.current, "east", "north")
       // new Car(carImageRef.current, "north", "east")

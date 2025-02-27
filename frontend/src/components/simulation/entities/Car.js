@@ -1,3 +1,5 @@
+import TrafficLight from "./TrafficLight";
+
 export default class Car{
 
     static scale = 0.02;
@@ -11,9 +13,9 @@ export default class Car{
     ]
 
     static stopLines = [
-        233, // north
-        363, // east
-        365, // south
+        225, // north
+        370, // east
+        375, // south
         230 // west
     ]
 
@@ -26,8 +28,8 @@ export default class Car{
     // ]
 
     static spawns = {
-        "00": {x: 300, y: 0}, // north left turns
-        "01": {x: 327, y: 0}, // north second right turns
+        "00": {x: 327, y: 0}, // north left turns
+        "01": {x: 300, y: 0}, // north second right turns
         "10": {x: 600, y: 336}, // east left turns
         "11": {x: 600, y: 310}, // east right turns
         "20": {x: 237, y:600}, // south left turns
@@ -71,16 +73,17 @@ export default class Car{
         this.id = Car.cars.length;
         this.waiting = false;
         this.isTurning = false;
+        this.isOut = false;
         this.t = 0;
     }
 
     static bezierCurves = {
-        "0-1": {p0: {x:327, y:215}, p1: {x:327, y:248}, p2: {x:360, y:248}}, // curve north left turn to east
-        "0-3": {p0: {x:300, y:215}, p1: {x:300, y:335}, p2: {x:240, y:335}}, // curve north right turn to west
-        "1-2": {p0: {x:363, y:336}, p1: {x:327, y:336}, p2: {x:327, y:360}}, // curve east left turn to south
-        "1-0": {p0: {x:363, y:310}, p1: {x:265, y:310}, p2: {x:265, y:240}}, // curve east right turn to north
-        "2-3": {p0: {x:237, y:365}, p1: {x:237, y:335}, p2: {x:227, y:335}}, // curve south left turn to west
-        "2-1": {p0: {x:265, y:365}, p1: {x:265, y:273}, p2: {x:365, y:273}}, // curve south right turn to east
+        "0-1": {p0: {x:327, y:225}, p1: {x:327, y:248}, p2: {x:360, y:248}}, // curve north left turn to east
+        "0-3": {p0: {x:300, y:225}, p1: {x:300, y:335}, p2: {x:240, y:335}}, // curve north right turn to west
+        "1-2": {p0: {x:370, y:336}, p1: {x:327, y:336}, p2: {x:327, y:360}}, // curve east left turn to south
+        "1-0": {p0: {x:370, y:310}, p1: {x:265, y:310}, p2: {x:265, y:240}}, // curve east right turn to north
+        "2-3": {p0: {x:237, y:375}, p1: {x:237, y:335}, p2: {x:227, y:335}}, // curve south left turn to west
+        "2-1": {p0: {x:265, y:375}, p1: {x:265, y:273}, p2: {x:365, y:273}}, // curve south right turn to east
         "3-0": {p0: {x:194, y:248}, p1: {x:238, y:248}, p2: {x:238, y:240}}, // curve west left turn to north
         "3-2": {p0: {x:194, y:273}, p1: {x:300, y:273}, p2: {x:300, y:360}} // curve west left turn to south
     }
@@ -101,19 +104,31 @@ export default class Car{
     }
 
     updateCar(){
+
+        if(this.isTurning || this.isOut){
+            this.move();
+            return;
+        }
+
         if(
             (this.spawnCardinal === 0 && this.y + this.height >= Car.stopLines[this.spawnCardinal]) ||
             (this.spawnCardinal === 1 && this.x <= Car.stopLines[this.spawnCardinal]) ||
             (this.spawnCardinal === 2 && this.y <= Car.stopLines[this.spawnCardinal]) ||
             (this.spawnCardinal === 3 && this.x + this.width >= Car.stopLines[this.spawnCardinal])
-        ){
-            this.isTurning = true;
+        ){ 
+            if(TrafficLight.instances.some(light => {
+                return light.cardinal === this.spawnCardinal && !light.isRed
+            })){
+                this.isTurning = true
+                this.isOut = true
+            } else{
+                return;
+            }
         }
         this.move();
     }
 
     move(){
-
         if(this.t < 1 && this.isTurning && (this.spawnCardinal + 2) % 4 !== this.endDirection){
 
             const curve = Car.bezierCurves[`${this.spawnCardinal}-${this.endDirection}`];
@@ -164,7 +179,7 @@ export default class Car{
             ctx.restore();
 
             if((this.spawnCardinal + 2) % 4 !== this.endDirection){
-                this.drawBezier(ctx);
+                // this.drawBezier(ctx);
             }
         }
     }
