@@ -26,9 +26,10 @@ export default class Car{
     // ]
 
     static spawns = {
-        "00": {x: 300, y: 0}, // north first lane 
-        "01": {x: 327, y: 0}, // north second lane
-        "11": {x: 600, y: 310}, // east
+        "00": {x: 300, y: 0}, // north left turns
+        "01": {x: 327, y: 0}, // north second right turns
+        "10": {x: 600, y: 336}, // east left turns
+        "11": {x: 600, y: 310}, // east right turns
         "22": {x: 247, y: 600}, // south
         "33": {x: 0, y: 273} // west
     }
@@ -52,14 +53,15 @@ export default class Car{
     // }
 
     static bezierCurves = {
-        "0-1": {p0: {x:327, y:215}, p1: {x:327, y:248}, p2: {x:360, y:248}},
-        "0-3": {p0: {x:300, y:215}, p1: {x:300, y:335}, p2: {x:240, y:335}}
+        "0-1": {p0: {x:327, y:215}, p1: {x:327, y:248}, p2: {x:360, y:248}}, // curve north left turn to east
+        "0-3": {p0: {x:300, y:215}, p1: {x:300, y:335}, p2: {x:240, y:335}}, // curve north right turn to west
+        "1-2": {p0: {x:363, y:336}, p1: {x:327, y:336}, p2: {x:327, y:360}}, // curve east left turn to south
+        "1-0": {p0: {x:363, y:310}, p1: {x:265, y:310}, p2: {x:265, y:240}} // curve east right turn to north
     }
 
     constructor(images, spawnCardinal, endDirection){
         this.spawnCardinal = Car.cardinalReferences[spawnCardinal];
         this.endDirection = Car.cardinalReferences[endDirection];
-        // this.x = Car.spawns[this.spawnCardinal].x;
         this.x = 0
         this.y = 0
         this.chooseSpawn()
@@ -72,15 +74,16 @@ export default class Car{
         this.waiting = false;
         this.isTurning = false;
         this.t = 0;
+        console.log(this.x, this.y);
     }
 
     chooseSpawn(){
 
-        if(this.spawnCardinal + this.endDirection % 4 === 1){ // right turn
-            this.x = Car.spawns[`${this.spawnCardinal}1`].x // second lane
+        if(this.spawnCardinal - 1 % 4 === this.endDirection){ // right turn
+            this.x = Car.spawns[`${this.spawnCardinal}1`].x // second lane (left one)
             this.y = Car.spawns[`${this.spawnCardinal}1`].y
-        } else if(this.spawnCardinal + this.endDirection % 4 === 3){ // left turn
-            this.x = Car.spawns[`${this.spawnCardinal}0`].x // first lane
+        } else if((this.spawnCardinal + 1) % 4 === this.endDirection){ // left turn
+            this.x = Car.spawns[`${this.spawnCardinal}0`].x // first lane (right one)   
             this.y = Car.spawns[`${this.spawnCardinal}0`].y
         } else{
             const random = Math.floor(Math.random() * 2) // need to change 2 (number of lanes)
@@ -92,13 +95,15 @@ export default class Car{
     updateCar(){
         if(this.spawnCardinal === 0 && this.y + this.height >= Car.stopLines[this.spawnCardinal]){
             this.isTurning = true;
+        } else if(this.spawnCardinal === 1 && this.x <= Car.stopLines[this.spawnCardinal]){
+            this.isTurning = true;
         }
         this.move();
     }
 
     move(){
 
-        if(this.t < 1 && this.isTurning && this.spawnCardinal + this.endDirection % 4 !== 2){
+        if(this.t < 1 && this.isTurning && (this.spawnCardinal + 2) % 4 !== this.endDirection){
 
             const curve = Car.bezierCurves[`${this.spawnCardinal}-${this.endDirection}`];
             
@@ -147,12 +152,14 @@ export default class Car{
             ctx.drawImage(this.img, -this.width / 2, -this.height / 2, this.width, this.height);
             ctx.restore();
 
-            // this.drawBezier(ctx);
+            if((this.spawnCardinal + 2) % 4 !== this.endDirection){
+                this.drawBezier(ctx);
+            }
         }
     }
 
     drawBezier(ctx){
-
+        
         const curve = Car.bezierCurves[`${this.spawnCardinal}-${this.endDirection}`];
 
         this.drawDot(ctx, curve.p0.x, curve.p0.y);

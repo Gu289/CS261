@@ -10,11 +10,11 @@ const Simulation = () => {
 
   const trafficFlow = [
     {from: "north", to: "east", vph: 1000},
-    // {from: "north", to: "south", vph: 180},
-    // {from: "north", to: "west", vph: 180},
-    // {from: "east", to: "south", vph: 180},
-    // {from: "east", to: "west", vph: 180},
-    // {from: "east", to: "north", vph: 180},
+    {from: "north", to: "south", vph: 1000},
+    {from: "north", to: "west", vph: 1000},
+    {from: "east", to: "south", vph: 1000},
+    {from: "east", to: "west", vph: 1000},
+    {from: "east", to: "north", vph: 1000},
     // {from: "south", to: "west", vph: 180},
     // {from: "south", to: "north", vph: 180},
     // {from: "south", to: "east", vph: 180},
@@ -61,15 +61,6 @@ const Simulation = () => {
   }
 
   const animationLoop = (frontCtx, backgroundCtx) => {
-    // if(!isPausedRef.current){
-    //   updateState();
-    //   renderFrame(frontCtx);
-    //   animationFrameRef.current = requestAnimationFrame(() =>
-    //     animationLoop(frontCtx, backgroundCtx)
-    //   );  
-    // } else{
-    //   cancelAnimationFrame(animationFrameRef.current);
-    // }
     if(!isPausedRef.current){
       updateState();
     }
@@ -81,7 +72,7 @@ const Simulation = () => {
 
   const updateState = () => {
     // remove cars out of bounds
-    // Car.cars = Car.cars.filter(car => !(car.x > 600 || car.y > 600 || car.x < 0 || car.y < 0));
+    Car.cars = Car.cars.filter(car => !(car.x > 600 || car.y > 600 || car.x < 0 || car.y < 0));
     if (Car.cars.length > 0) {
       Car.cars.forEach((car) => {
         if (!car.waiting) {
@@ -184,7 +175,7 @@ const Simulation = () => {
         backgroundCtx.restore();
       });
 
-      // new Car(carImageRef.current, "north", "west")
+      // new Car(carImageRef.current, "east", "north")
       // new Car(carImageRef.current, "north", "east")
       // new Car(carImageRef.current, "north", "south")
       
@@ -196,7 +187,11 @@ const Simulation = () => {
       //   new Car(carImageRef.current, "north", "east")
       // }, 1000);
 
-      trafficFlow.forEach(({ from, to, vph }) => generateCars(from, to, vph))
+      trafficFlow.forEach(({ from, to, vph }) => {
+        console.log(from, to, vph)
+        generateCars(from, to, vph)
+      
+      })
 
       // track mouse position
       frontRef.current.addEventListener("mousemove", (event) => {
