@@ -31,9 +31,10 @@ export default class Car{
         "10": {x: 600, y: 336}, // east left turns
         "11": {x: 600, y: 310}, // east right turns
         "20": {x: 237, y:600}, // south left turns
-        "21": {x: 265, y:600},
-        // "22": {x: 247, y: 600}, // south
-        "33": {x: 0, y: 273} // west
+        "21": {x: 265, y:600}, // south right turns
+        "30": {x: 0, y: 248}, // west left turns
+        "31": {x: 0, y: 273} // west right turns
+
     }
 
     static cardinalReferences = {
@@ -54,14 +55,7 @@ export default class Car{
     //     p2: {x:360, y:248},
     // }
 
-    static bezierCurves = {
-        "0-1": {p0: {x:327, y:215}, p1: {x:327, y:248}, p2: {x:360, y:248}}, // curve north left turn to east
-        "0-3": {p0: {x:300, y:215}, p1: {x:300, y:335}, p2: {x:240, y:335}}, // curve north right turn to west
-        "1-2": {p0: {x:363, y:336}, p1: {x:327, y:336}, p2: {x:327, y:360}}, // curve east left turn to south
-        "1-0": {p0: {x:363, y:310}, p1: {x:265, y:310}, p2: {x:265, y:240}}, // curve east right turn to north
-        "2-3": {p0: {x:237, y:365}, p1: {x:237, y:335}, p2: {x:227, y:335}}, // curve south left turn to west
-        "2-1": {p0: {x:265, y:365}, p1: {x:265, y:273}, p2: {x:365, y:273}} // curve south right turn to east
-    }
+    
 
     constructor(images, spawnCardinal, endDirection){
         this.spawnCardinal = Car.cardinalReferences[spawnCardinal];
@@ -78,7 +72,17 @@ export default class Car{
         this.waiting = false;
         this.isTurning = false;
         this.t = 0;
-        console.log(this.x, this.y);
+    }
+
+    static bezierCurves = {
+        "0-1": {p0: {x:327, y:215}, p1: {x:327, y:248}, p2: {x:360, y:248}}, // curve north left turn to east
+        "0-3": {p0: {x:300, y:215}, p1: {x:300, y:335}, p2: {x:240, y:335}}, // curve north right turn to west
+        "1-2": {p0: {x:363, y:336}, p1: {x:327, y:336}, p2: {x:327, y:360}}, // curve east left turn to south
+        "1-0": {p0: {x:363, y:310}, p1: {x:265, y:310}, p2: {x:265, y:240}}, // curve east right turn to north
+        "2-3": {p0: {x:237, y:365}, p1: {x:237, y:335}, p2: {x:227, y:335}}, // curve south left turn to west
+        "2-1": {p0: {x:265, y:365}, p1: {x:265, y:273}, p2: {x:365, y:273}}, // curve south right turn to east
+        "3-0": {p0: {x:194, y:248}, p1: {x:238, y:248}, p2: {x:238, y:240}}, // curve west left turn to north
+        "3-2": {p0: {x:194, y:273}, p1: {x:300, y:273}, p2: {x:300, y:360}} // curve west left turn to south
     }
 
     chooseSpawn(){
@@ -97,11 +101,12 @@ export default class Car{
     }
 
     updateCar(){
-        if(this.spawnCardinal === 0 && this.y + this.height >= Car.stopLines[this.spawnCardinal]){
-            this.isTurning = true;
-        } else if(this.spawnCardinal === 1 && this.x <= Car.stopLines[this.spawnCardinal]){
-            this.isTurning = true;
-        } else if(this.spawnCardinal === 2 && this.y <= Car.stopLines[this.spawnCardinal]){
+        if(
+            (this.spawnCardinal === 0 && this.y + this.height >= Car.stopLines[this.spawnCardinal]) ||
+            (this.spawnCardinal === 1 && this.x <= Car.stopLines[this.spawnCardinal]) ||
+            (this.spawnCardinal === 2 && this.y <= Car.stopLines[this.spawnCardinal]) ||
+            (this.spawnCardinal === 3 && this.x + this.width >= Car.stopLines[this.spawnCardinal])
+        ){
             this.isTurning = true;
         }
         this.move();

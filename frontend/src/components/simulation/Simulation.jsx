@@ -18,9 +18,9 @@ const Simulation = () => {
     {from: "south", to: "west", vph: 1000},
     {from: "south", to: "north", vph: 1000},
     {from: "south", to: "east", vph: 1000},
-    // {from: "west", to: "north", vph: 180},
-    // {from: "west", to: "east", vph: 180},
-    // {from: "west", to: "south", vph: 180},
+    {from: "west", to: "north", vph: 1000},
+    {from: "west", to: "east", vph: 1000},
+    {from: "west", to: "south", vph: 1000},
   ]
 
   const isPausedRef = useRef(false);
