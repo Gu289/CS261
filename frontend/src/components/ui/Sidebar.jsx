@@ -132,6 +132,8 @@ const Sidebar = ( { handleSimId, handleResults }) => {
 
   const displayResults = (data) => {
     console.log(data);
+    setStartSim(false);
+    handleResults(data);
   }
 
   return (

@@ -6,8 +6,9 @@ const Home = ( { handleSimId }) => {
 
     const [showResults, setShowResults] = useState(false)
 
-    const handleResults = () => {
+    const handleResults = (data) => {
         setShowResults(!showResults);
+        console.log(data)
     }
 
     return(

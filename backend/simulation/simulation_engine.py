@@ -353,14 +353,27 @@ class Junction:
         self.traffic_light = TrafficLight(traffic_light_cycle_time)
         self.enqueuer = Enqueuer(self.traffic_dict, self.locks_dict, self.vehicle_warehouse, self.junction_config)
         self.dequeuer = Dequeuer(self.traffic_dict, self.locks_dict, self.max_queue_length_tracker, self.junction_config, self.traffic_light)
+        self.threads = []
 
     def start(self):
-        self.enqueuer.start()
-        self.dequeuer.start()
-        self.traffic_light.start()
+        # Create threads with references
+        enqueuer_thread = threading.Thread(target=self.enqueuer.start, daemon=True)
+        dequeuer_thread = threading.Thread(target=self.dequeuer.start, daemon=True)
+        traffic_light_thread = threading.Thread(target=self.traffic_light.start, daemon=True)
+        
+        # Start threads
+        enqueuer_thread.start()
+        dequeuer_thread.start()
+        traffic_light_thread.start()
+        
+        # Store references
+        self.threads = [enqueuer_thread, dequeuer_thread, traffic_light_thread]
 
 class SimulationEngine:
     def __init__(self, simulation:Simulation, traffic_light_cycle_time=3):
+        global stop_event
+        stop_event = threading.Event()
+        
         self.junction_config = simulation.junction_config
         self.vehicle_warehouse = VehiclesWarehouse(self.junction_config, 2)
         self.junction = Junction(self.junction_config, self.vehicle_warehouse, traffic_light_cycle_time)
@@ -391,38 +404,49 @@ class SimulationEngine:
         '''
         self.junction.start()
         try:
+            # Main simulation loop
             while not self.vehicle_warehouse.is_abs_empty():
                 time.sleep(1)
+            
+            # Signal threads to stop
             stop_event.set()
             print("Simulation completed.")
             print("Computing metrics...")
+            
+            # Wait for threads to finish (optional timeout to prevent hanging)
+            for thread in self.junction.threads:
+                thread.join(timeout=5)  # 5 second timeout
 
+            # Continue with metrics computation
             path_to_queries = r"queries\compute_AWT_MWT.sql"
             metrics = SimulationEngine.compute_AWT_MWT(path_to_queries)
             for dir in metrics:
                 metrics[dir]["max_queue_length"] = self.junction.max_queue_length_tracker[dir]
-
-            # Save metrics to the Simulation record,
-            # assuming you have a JSONField or similar
+            
+            # Save to simulation model
             # self.simulation.metrics = metrics
             # self.simulation.simulation_status = 'completed'
             # self.simulation.save()
-
+            
             return metrics
 
         except KeyboardInterrupt:
             stop_event.set()
             print("Simulation stopped.")
-
+        
         finally:
-            # Delete all vehicles from the database and reset the primary key sequence
+            # Wait for threads to finish if they haven't already
+            for thread in self.junction.threads:
+                if thread.is_alive():
+                    thread.join(timeout=2)
+            
+            # Then do cleanup
             Vehicle.objects.all().delete()
-
             from django.db import connection
             with connection.cursor() as cursor:
                 cursor.execute("DELETE FROM simulation_vehicle;")
                 cursor.execute("DELETE FROM sqlite_sequence WHERE name='simulation_vehicle';")
-
+            
             print("Vehicle table was reset.")
 
 
