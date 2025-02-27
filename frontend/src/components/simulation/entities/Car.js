@@ -30,7 +30,9 @@ export default class Car{
         "01": {x: 327, y: 0}, // north second right turns
         "10": {x: 600, y: 336}, // east left turns
         "11": {x: 600, y: 310}, // east right turns
-        "22": {x: 247, y: 600}, // south
+        "20": {x: 237, y:600}, // south left turns
+        "21": {x: 265, y:600},
+        // "22": {x: 247, y: 600}, // south
         "33": {x: 0, y: 273} // west
     }
 
@@ -56,7 +58,9 @@ export default class Car{
         "0-1": {p0: {x:327, y:215}, p1: {x:327, y:248}, p2: {x:360, y:248}}, // curve north left turn to east
         "0-3": {p0: {x:300, y:215}, p1: {x:300, y:335}, p2: {x:240, y:335}}, // curve north right turn to west
         "1-2": {p0: {x:363, y:336}, p1: {x:327, y:336}, p2: {x:327, y:360}}, // curve east left turn to south
-        "1-0": {p0: {x:363, y:310}, p1: {x:265, y:310}, p2: {x:265, y:240}} // curve east right turn to north
+        "1-0": {p0: {x:363, y:310}, p1: {x:265, y:310}, p2: {x:265, y:240}}, // curve east right turn to north
+        "2-3": {p0: {x:237, y:365}, p1: {x:237, y:335}, p2: {x:227, y:335}}, // curve south left turn to west
+        "2-1": {p0: {x:265, y:365}, p1: {x:265, y:273}, p2: {x:365, y:273}} // curve south right turn to east
     }
 
     constructor(images, spawnCardinal, endDirection){
@@ -79,7 +83,7 @@ export default class Car{
 
     chooseSpawn(){
 
-        if(this.spawnCardinal - 1 % 4 === this.endDirection){ // right turn
+        if((this.spawnCardinal - 1) % 4 === this.endDirection){ // right turn
             this.x = Car.spawns[`${this.spawnCardinal}1`].x // second lane (left one)
             this.y = Car.spawns[`${this.spawnCardinal}1`].y
         } else if((this.spawnCardinal + 1) % 4 === this.endDirection){ // left turn
@@ -96,6 +100,8 @@ export default class Car{
         if(this.spawnCardinal === 0 && this.y + this.height >= Car.stopLines[this.spawnCardinal]){
             this.isTurning = true;
         } else if(this.spawnCardinal === 1 && this.x <= Car.stopLines[this.spawnCardinal]){
+            this.isTurning = true;
+        } else if(this.spawnCardinal === 2 && this.y <= Car.stopLines[this.spawnCardinal]){
             this.isTurning = true;
         }
         this.move();
