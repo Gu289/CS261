@@ -28,9 +28,10 @@ def run_simulation(simulation_id):
         simulation.simulation_status = "completed"
         simulation.save()
         
-        print(results)
+        return results
     except Exception as e:
         print(e)
         simulation.simulation_status = "failed"
         simulation.save()
+        return "Simulation failed"
 

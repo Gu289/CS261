@@ -97,10 +97,13 @@ class Enqueuer:
                 vehicle = self.vehicle_warehouse.get_vehicle(direction)
 
             incoming_lane = vehicle.incoming_lane
-            with self.locks_dict[direction]["incoming"][incoming_lane]:
-                self.traffic_dict[direction]["incoming"][incoming_lane].put(vehicle)
-                vehicle.arrival_time = timezone.now()
-                vehicle.save()
+            # with self.locks_dict[direction]["incoming"][incoming_lane]:
+            #     self.traffic_dict[direction]["incoming"][incoming_lane].put(vehicle)
+            #     vehicle.arrival_time = timezone.now()
+            #     vehicle.save()
+            self.traffic_dict[direction]["incoming"][incoming_lane].put(vehicle)
+            vehicle.arrival_time = timezone.now()
+            vehicle.save()
 
             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {direction} traffic, lane {incoming_lane}] A new vehicle going to the {vehicle.exit_direction} reached the junction.")
         
@@ -119,7 +122,7 @@ class Dequeuer:
         self.traffic_dict = traffic_dict
         self.junction_config = junction_config
         self.traffic_light = traffic_light
-        self.locks_dict = locks_dict
+        # self.locks_dict = locks_dict
         self.max_queue_length_tracker = max_queue_length_tracker
         
         self.CROSSING_TIME = crossing_time
@@ -153,7 +156,7 @@ class Dequeuer:
                 # Check if the lane is not empty
                 if not lane.empty():
                     # Acquire the lock for this particular lane
-                    self.locks_dict[dir]["incoming"][index].acquire()  
+                    # self.locks_dict[dir]["incoming"][index].acquire()  
                     
                     # Peek at the first vehicle in the queue
                     vehicle = lane.queue[0] 
@@ -161,7 +164,7 @@ class Dequeuer:
                     # Check if the traffic light is green for the incoming direction of the vehicle
                     if self.traffic_light.is_green(vehicle.incoming_direction): 
                         vehicle = lane.get()
-                        self.locks_dict[dir]["incoming"][index].release() 
+                        # self.locks_dict[dir]["incoming"][index].release() 
 
                         # Check if the vehicle is and can cross the junction
                         if vehicle.get_relative_dir(vehicle.incoming_direction, vehicle.exit_direction) == Vehicle.TURNING_RIGHT:  
@@ -178,14 +181,21 @@ class Dequeuer:
                         exit_dir = vehicle.exit_direction
                         exit_lane = vehicle.exit_lane
                         
-                        with self.locks_dict[exit_dir]["exiting"][exit_lane]:
-                            vehicle.departure_time = timezone.now()
-                            time_diff = (vehicle.departure_time - vehicle.arrival_time).total_seconds()
-                            vehicle.waiting_time = time_diff
-                            vehicle.save()
-                            time.sleep(self.CROSSING_TIME) 
-                            self.traffic_dict[exit_dir]["exiting"][exit_lane].put(vehicle)
-                            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} Vehicle from {incoming_dir} exited to {exit_dir}, waited for {time_diff}")
+                        # with self.locks_dict[exit_dir]["exiting"][exit_lane]:
+                        #     vehicle.departure_time = timezone.now()
+                        #     time_diff = (vehicle.departure_time - vehicle.arrival_time).total_seconds()
+                        #     vehicle.waiting_time = time_diff
+                        #     vehicle.save()
+                        #     time.sleep(self.CROSSING_TIME) 
+                        #     self.traffic_dict[exit_dir]["exiting"][exit_lane].put(vehicle)
+                        #     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} Vehicle from {incoming_dir} exited to {exit_dir}, waited for {time_diff}")
+                        vehicle.departure_time = timezone.now()
+                        time_diff = (vehicle.departure_time - vehicle.arrival_time).total_seconds()
+                        vehicle.waiting_time = time_diff
+                        vehicle.save()
+                        time.sleep(self.CROSSING_TIME) 
+                        self.traffic_dict[exit_dir]["exiting"][exit_lane].put(vehicle)
+                        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} Vehicle from {incoming_dir} exited to {exit_dir}, waited for {time_diff}")
 
                     else:
                         self.max_queue_length_tracker[dir] = max(self.max_queue_length_tracker[dir], lane.qsize())
@@ -193,7 +203,7 @@ class Dequeuer:
                         if new_q_size != old_inc_q_size:
                             old_inc_q_size = new_q_size
                             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {dir} traffic] Traffic light is red, current queue length: {new_q_size}")
-                        self.locks_dict[dir]["incoming"][index].release() 
+                        # self.locks_dict[dir]["incoming"][index].release() 
 
     def start(self):
         for direction in self.traffic_dict:
@@ -416,5 +426,9 @@ class SimulationEngine:
             print("Vehicle table was reset.")
 
 
-# simulation = SimulationEngine(junction_config)
-# simulation.start()
+# simulation = Simulation.objects.create(
+#     simulation_status="not_started",
+#     junction_config=junction_config
+# )
+# engine = SimulationEngine(simulation)
+# engine.start()
