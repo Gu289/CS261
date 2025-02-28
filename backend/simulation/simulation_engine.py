@@ -167,44 +167,62 @@ class Dequeuer:
                     # Check if the traffic light is green for the incoming direction of the vehicle
                     if self.traffic_light.is_green(vehicle.incoming_direction): 
 
-                        # Check if the vehicle is and can cross the junction
+                        # Check if the vehicle is turning right
                         if vehicle.get_relative_dir(vehicle.incoming_direction, vehicle.exit_direction) == Vehicle.TURNING_RIGHT:  
-                            # Check if the adjacent lane is also dequeueing
+                            # Need to check ALL lanes from the opposite direction
                             opp_dir = self.get_opposite_direction(vehicle.incoming_direction)
-                            opp_lane_lock = self.locks_dict[opp_dir]["incoming"][index]
-                            if not opp_lane_lock.acquire(blocking=False):
-                                # If can't get lock, the opposite lane is being processed by another thread
-                                # Skip this vehicle for now to prevent deadlocks
-                                continue
-
+                            
+                            # Try to acquire locks for all opposite direction lanes
+                            acquired_locks = []
                             try:
-                                opp_lane = self.traffic_dict[opp_dir]["incoming"][index]
-
-                                # Check if opposite lane has a vehicle going straight - it has right of way
-                                if not opp_lane.empty():
-                                    opp_vehicle = opp_lane.queue[0]
-
-                                    if opp_vehicle.get_relative_dir(opp_vehicle.incoming_direction, opp_vehicle.exit_direction) == Vehicle.GOING_STRAIGHT:
+                                # Try to acquire all locks for opposite lanes
+                                for opp_idx in range(len(self.traffic_dict[opp_dir]["incoming"])):
+                                    opp_lane_lock = self.locks_dict[opp_dir]["incoming"][opp_idx]
+                                    if not opp_lane_lock.acquire(blocking=False):
+                                        # If can't get any lock, release all acquired locks and try again later
+                                        for lock in acquired_locks:
+                                            lock.release()
+                                        continue  # Skip this vehicle for now
+                                    acquired_locks.append(opp_lane_lock)
                                     
-                                        # let opposite vehciel go first
-                                        opp_vehicle = opp_lane.get()
-
-                                        incoming_dir = opp_vehicle.incoming_direction
-                                        exit_dir = opp_vehicle.exit_direction
-                                        exit_lane = opp_vehicle.exit_lane
-
-                                        with self.locks_dict[exit_dir]["exiting"][exit_lane]:
-                                            opp_vehicle.departure_time = timezone.now()
-                                            time_diff = (opp_vehicle.departure_time - opp_vehicle.arrival_time).total_seconds()
-                                            opp_vehicle.waiting_time = time_diff
-                                            opp_vehicle.save()
-                                            time.sleep(self.CROSSING_TIME)
-                                            self.traffic_dict[exit_dir]["exiting"][exit_lane].put(opp_vehicle)
-                                            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} Vehicle from {incoming_dir} exited to {exit_dir}, waited for {time_diff}")
-
-                                        continue
+                                # Check all opposite lanes for vehicles going straight
+                                straight_going_vehicles = []
+                                for opp_idx, opp_lane in enumerate(self.traffic_dict[opp_dir]["incoming"]):
+                                    if not opp_lane.empty():
+                                        opp_vehicle = opp_lane.queue[0]
+                                        
+                                        if (opp_vehicle.get_relative_dir(opp_vehicle.incoming_direction, 
+                                            opp_vehicle.exit_direction) == Vehicle.GOING_STRAIGHT and
+                                            self.traffic_light.is_green(opp_vehicle.incoming_direction)):
+                                            
+                                            # Found a straight-going vehicle with right of way
+                                            # Get the vehicle and add to our processing list
+                                            opp_vehicle = opp_lane.get()
+                                            straight_going_vehicles.append((opp_idx, opp_vehicle))
+                                
+                                # Process all straight-going vehicles first
+                                for opp_idx, opp_vehicle in straight_going_vehicles:
+                                    incoming_dir = opp_vehicle.incoming_direction
+                                    exit_dir = opp_vehicle.exit_direction
+                                    exit_lane = opp_vehicle.exit_lane
+                                    
+                                    with self.locks_dict[exit_dir]["exiting"][exit_lane]:
+                                        opp_vehicle.departure_time = timezone.now()
+                                        time_diff = (opp_vehicle.departure_time - opp_vehicle.arrival_time).total_seconds()
+                                        opp_vehicle.waiting_time = time_diff
+                                        opp_vehicle.save()
+                                        time.sleep(self.CROSSING_TIME)
+                                        self.traffic_dict[exit_dir]["exiting"][exit_lane].put(opp_vehicle)
+                                        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} [RIGHT-OF-WAY] Vehicle from {incoming_dir} lane {opp_idx} went straight to {exit_dir}, waited for {time_diff}")
+                                
+                                # If we processed any straight-going vehicles, skip this cycle for the right-turning vehicle
+                                if straight_going_vehicles:
+                                    continue
+                                    
                             finally:
-                                opp_lane_lock.release()
+                                # Always release all acquired locks
+                                for lock in acquired_locks:
+                                    lock.release()
                         
                         vehicle = lane.get()
 
