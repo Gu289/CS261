@@ -3,19 +3,20 @@ import { Trash, Filter, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const initialSimulations = [
-  { id: 1, name: "Simulation #1", score: 85, date: "2024-02-10" },
-  { id: 2, name: "Simulation #2", score: 78, date: "2024-02-09" },
-  { id: 3, name: "Simulation #3", score: 90, date: "2024-02-08" },
-  { id: 4, name: "Simulation #4", highest: true, parameters: ["Left Turn Lane: Yes", "West inbound and outbound traffic flow", "3 Lanes configuration"], score: 95, date: "2024-02-07" },
-  { id: 5, name: "Simulation #5", score: 80, date: "2024-02-06" },
-  { id: 6, name: "Simulation #6", score: 82, date: "2024-02-05" },
-  { id: 7, name: "Simulation #7", score: 88, date: "2024-02-04" }
-];
+// const initialSimulations = [
+//   { id: 1, name: "Simulation #1", score: 85, date: "2024-02-10" },
+//   { id: 2, name: "Simulation #2", score: 78, date: "2024-02-09" },
+//   { id: 3, name: "Simulation #3", score: 90, date: "2024-02-08" },
+//   { id: 4, name: "Simulation #4", highest: true, parameters: ["Left Turn Lane: Yes", "West inbound and outbound traffic flow", "3 Lanes configuration"], score: 95, date: "2024-02-07" },
+//   { id: 5, name: "Simulation #5", score: 80, date: "2024-02-06" },
+//   { id: 6, name: "Simulation #6", score: 82, date: "2024-02-05" },
+//   { id: 7, name: "Simulation #7", score: 88, date: "2024-02-04" }
+// ];
 
-const History = ( { simId }) => {
+const History = () => {
+
   const navigate = useNavigate();
-  const [simulations, setSimulations] = useState(initialSimulations);
+  const [simulations, setSimulations] = useState([]);
   const [selectedSim, setSelectedSim] = useState(null);
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
 
@@ -45,10 +46,10 @@ const History = ( { simId }) => {
   };
 
   useEffect(() => {
-    console.log(simId)
     const getData = async () => {
       const response = await axios.get(`http://127.0.0.1:8000/simulation/completed-simulations/`)
       console.log(response)
+      setSimulations(response.data);
     }
 
     getData();
@@ -100,12 +101,12 @@ const History = ( { simId }) => {
             <ul>
               {simulations.map((sim) => (
                 <li
-                  key={sim.id}
+                  key={sim.simulation_id}
                   className={`flex justify-between items-center p-3 my-2 rounded-lg cursor-pointer hover:bg-gray-800 ${selectedSim?.id === sim.id ? 'bg-gray-700' : 'bg-gray-900'}`}
                   onClick={() => setSelectedSim(sim)}
                 >
-                  <span className="text-lg">{sim.name}</span>
-                  <button onClick={() => deleteSimulation(sim.id)} className="text-red-400 hover:text-red-600">
+                  <span className="text-lg">Simulation {sim.simulation_id}</span>
+                  <button onClick={() => deleteSimulation(sim.simulation_id)} className="text-red-400 hover:text-red-600">
                     <Trash size={20} />
                   </button>
                 </li>
@@ -131,16 +132,23 @@ const History = ( { simId }) => {
         
         {selectedSim ? (
           <div className="mt-4">
-            <p className="text-lg font-semibold">Current Simulation: <strong>{selectedSim.name}</strong></p>
-            {selectedSim.highest && <p className="text-green-600 font-bold mt-2">🔥 Highest Scoring Simulation!</p>}
+            <p className="text-lg font-semibold">Current Simulation: <strong>Simulation {selectedSim.simulation_id}</strong></p>
+            {simulations.every((sim) => {
+              if(sim.efficiency_score < selectedSim.efficiency_score){
+                return true
+              } 
+            }) && <p className="text-green-600 font-bold mt-2">🔥 Highest Scoring Simulation!</p>}
             
-            {selectedSim.parameters && (
+            {selectedSim.metrics && (
               <>
                 <p className="text-lg font-semibold mt-4">Key Parameters:</p>
                 <ul className="list-disc pl-6 text-lg mt-2">
-                  {selectedSim.parameters.map((param, index) => (
-                    <li key={index}>{param}</li>
-                  ))}
+                  {Object.entries(selectedSim.metrics).forEach(([direction, values]) => {
+                    <p>{direction}</p>
+                    Object.entries(values).forEach((metric, value) => {
+                      <li>{metric}: {value}</li>
+                    })
+                  })}
                 </ul>
               </>
             )}
