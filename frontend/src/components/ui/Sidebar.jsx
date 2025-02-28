@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Link } from "react-router-dom";
 import axios from 'axios';
 
-const Sidebar = ( { handleSimId }) => {
+const Sidebar = ( { handleSimId, handleResults }) => {
 
   // used to efficiently map and return Input Form components
   const directions = ["north", "east", "south", "west"]

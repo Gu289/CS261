@@ -22,8 +22,10 @@ const History = () => {
 
   const clearHistory = () => {
     try {
+      console.log(simulations)
       simulations.forEach(async (simulation) => {
-        const response = await axios.post(`http://127.0.0.1:8000/simulation/delete-simulation/?simulation_id=${simulation.simulation_id}`)
+        const response = await axios.delete(`http://127.0.0.1:8000/simulation/delete-simulation/?simulation_id=${simulation.simulation_id}`)
+        console.log(response)
       })
       setSimulations([]);
       setSelectedSim(null);
