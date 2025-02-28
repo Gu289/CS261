@@ -23,7 +23,8 @@ const History = () => {
   const clearHistory = () => {
     try {
       simulations.forEach(async (simulation) => {
-        const response = await axios.post(`http://127.0.0.1:8000/simulation/delete-simulation/?simulation_id=${simulation.simulation_id}`)
+        const response = await axios.delete(`http://127.0.0.1:8000/simulation/delete-simulation/?simulation_id=${simulation.simulation_id}`)
+        console.log(response)
       })
       setSimulations([]);
       setSelectedSim(null);
@@ -32,10 +33,15 @@ const History = () => {
     }
   }
 
-  const deleteSimulation = (id) => {
-    setSimulations(simulations.filter(sim => sim.id !== id));
-    if (selectedSim && selectedSim.id === id) {
-      setSelectedSim(null);
+  const deleteSimulation = async (id) => {
+    try{
+      const response = await axios.delete(`http://127.0.0.1:8000/simulation/delete-simulation/?simulation_id=${id}`);
+      setSimulations(simulations.filter(sim => sim.id !== id));
+      if (selectedSim && selectedSim.id === id) {
+        setSelectedSim(null);
+      }
+    } catch(error){
+      console.error(error);
     }
   };
 
