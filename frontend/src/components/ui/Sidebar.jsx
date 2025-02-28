@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Link } from "react-router-dom";
 import axios from 'axios';
 
-const Sidebar = ( { handleSimId, handleResults }) => {
+const Sidebar = ( { handleSimId }) => {
 
   // used to efficiently map and return Input Form components
   const directions = ["north", "east", "south", "west"]
@@ -141,9 +141,6 @@ const Sidebar = ( { handleSimId, handleResults }) => {
       <div className="mt-5 ml-5">
         <Link to="/history"><button type="button" className="bg-button px-8 py-5 rounded-2xl shadow-md text-2xl hover:bg-button-hover transition duration-300 cursor-pointer">History</button></Link>
       </div>
-      <button type="button" onClick={handleResults} className="bg-gray-500">
-        Show Result
-      </button>
       <div className="p-5 flex flex-col gap-5">
         {/* make input form for each direction */}
         {directions.map((direction, index) => (

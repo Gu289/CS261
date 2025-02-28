@@ -21,9 +21,16 @@ const History = () => {
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
 
   const clearHistory = () => {
-    setSimulations([]);  
-    setSelectedSim(null);
-  };
+    try {
+      simulations.forEach(async (simulation) => {
+        const response = await axios.post(`http://127.0.0.1:8000/simulation/delete-simulation/?simulation_id=${simulation.simulation_id}`)
+      })
+      setSimulations([]);
+      setSelectedSim(null);
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   const deleteSimulation = (id) => {
     setSimulations(simulations.filter(sim => sim.id !== id));
