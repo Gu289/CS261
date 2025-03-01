@@ -101,7 +101,7 @@ const Historynew = () => {
             {/* Simulations List */}
             <div className="flex-grow overflow-y-auto">
                 {simulations.length > 0 ? (
-                    <ul>
+                    <ul className="max-h-[calc(70vh-40px)]">
                         {simulations.map((sim, index) => (
                             <li key={index} className="flex justify-between items-center p-3 my-2 hover:bg-gray-100 rounded-lg cursor-pointer" onClick={() => setCurrent(sim)}>
                                 <p className="text-lg">Simulation {sim.simulation_id}</p>
