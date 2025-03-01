@@ -5,11 +5,13 @@ import Sidebar from "./ui/Sidebar";
 import Simulation from "./simulation/Simulation";
 import axios from "axios";
 
+
 const Home = ({ handleSimId }) => {
   const [showResults, setShowResults] = useState(false);
   const [simulationData, setSimulationData] = useState(null);
   const [simulationId, setSimulationId] = useState(null);
   const [error, setError] = useState(null);
+  const [startAnimation, setStartAnimation] = useState(false);
 
   // Callback triggered when simulation starts/completes
   const handleResults = (data) => {
@@ -48,6 +50,7 @@ const Home = ({ handleSimId }) => {
                   );
                   // Even if this call fails, we should show something to the user
                   setShowResults(true);
+                  setStartAnimation(false);
                 });
             }
           })
@@ -91,9 +94,8 @@ const Home = ({ handleSimId }) => {
 
   return (
     <div className="bg-white h-screen grid grid-cols-3 overflow-y-hidden">
-      <Sidebar handleSimId={handleSimId} handleResults={handleResults} />
-      <Simulation />
-    
+      <Sidebar setStartAnimation={setStartAnimation} handleSimId={handleSimId} handleResults={handleResults} />
+      <Simulation startAnimation={startAnimation} />
     {showResults && (
     <dialog
         open

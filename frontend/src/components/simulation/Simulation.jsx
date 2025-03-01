@@ -8,7 +8,7 @@ import TrafficLight from './entities/TrafficLight';
 import { FaRegPauseCircle } from "react-icons/fa";
 import { FaRegPlayCircle } from "react-icons/fa";
 
-const Simulation = () => {
+const Simulation = ( { startAnimation, setStartAnimation } ) => {
 
   const trafficFlow = [
     {from: "north", to: "east", vph: 1000},
@@ -164,24 +164,6 @@ const Simulation = () => {
       new TrafficLight(lightImageRef.current, 2)
       new TrafficLight(lightImageRef.current, 3)
 
-      // new Car(carImageRef.current, "east", "north")
-      // new Car(carImageRef.current, "north", "east")
-      // new Car(carImageRef.current, "north", "south")
-      
-      // const spawnInterval = setInterval(() => {
-      //   new Car(carImageRef.current, "north", "west")
-      // }, 1000);
-
-      // const spawnInterval1 = setInterval(() => {
-      //   new Car(carImageRef.current, "north", "east")
-      // }, 1000);
-
-      trafficFlow.forEach(({ from, to, vph }) => {
-        // console.log(from, to, vph)
-        generateCars(from, to, vph)
-      
-      })
-
       // track mouse position
       frontRef.current.addEventListener("mousemove", (event) => {
         const rect = frontRef.current.getBoundingClientRect();
@@ -194,6 +176,15 @@ const Simulation = () => {
 
     return () => cancelAnimationFrame(animationFrameRef.current);
   }, []);
+
+  // when startAnimation changes, it starts spawning cars
+  useEffect(() => {
+    if(startAnimation){
+      trafficFlow.forEach(({ from, to, vph }) => {
+        generateCars(from, to, vph)
+      })
+    }
+  }, [startAnimation])
 
   return (
     <div className="col-span-2 relative bg-gray-100 overflow-y-hidden p-5 flex flex-col items-center space-y-4">
