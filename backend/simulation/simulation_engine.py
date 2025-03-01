@@ -113,9 +113,10 @@ class Enqueuer:
 
     def start(self):
         for direction in self.traffic_dict:
-            threading.Thread(target=self.enqueue_vehicles, args=(direction,), daemon=True).start()
-            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {direction} traffic ] A thread for enqueueing traffic has stared.")
-
+            # Only start threads for directions with inbound traffic
+            if self.junction_config[direction]["inbound"] > 0:
+                threading.Thread(target=self.enqueue_vehicles, args=(direction,), daemon=True).start()
+                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {direction} traffic ] Thread for enqueueing traffic has started.")
 
 class Dequeuer:
     def __init__(self, traffic_dict, locks_dict, max_queue_length_tracker, junction_config, traffic_light, crossing_time=1/1000):
@@ -289,15 +290,16 @@ class VehiclesWarehouse:
             case _:
                 incoming_lane = random_lane
         
-        vehicle = {
-            "incoming_direction": incoming_direction,
-            "exit_direction": exit_direction,
-            "incoming_lane": incoming_lane,
-            "exit_lane": list(range(lane_count))[::-1][incoming_lane]   
-        }
-
-        vehicle = Vehicle.objects.create(**vehicle)
-        vehicle.save()
+        from django.db import transaction
+        with transaction.atomic():
+            #create vehicle
+            vehicle = Vehicle.objects.create(
+                incoming_direction=incoming_direction,
+                exit_direction=exit_direction,
+                incoming_lane=incoming_lane,
+                exit_lane=list(range(lane_count))[::-1][incoming_lane]  
+            )
+            vehicle.save()
 
         return vehicle
     
@@ -312,6 +314,9 @@ class VehiclesWarehouse:
         """
         vehicles = []
         incoming_flow_rate = self.junction_config[incoming_direction]["inbound"]
+        # Skip directions with no inbound traffic
+        if incoming_flow_rate == 0:
+            return vehicles
         exit_flow_rates = self.junction_config[incoming_direction]
 
         for d,v in exit_flow_rates.items():
@@ -355,29 +360,30 @@ class Junction:
     def __init__(self, junction_config, vehicle_warehouse, traffic_light_cycle_time=20/1000):
         self.junction_config = junction_config
         self.vehicle_warehouse = vehicle_warehouse
+        lane_count = self.junction_config["numLanes"]
         self.traffic_dict = {
             "north": {
-                "incoming": [Queue() for _ in range(n)],
-                "exiting": [Queue() for _ in range(n)]
+                "incoming": [Queue() for _ in range(lane_count)],
+                "exiting": [Queue() for _ in range(lane_count)]
             },
             "south": {
-                "incoming": [Queue() for _ in range(n)],
-                "exiting": [Queue() for _ in range(n)]
+                "incoming": [Queue() for _ in range(lane_count)],
+                "exiting": [Queue() for _ in range(lane_count)]
             },
             "east": {
-                "incoming": [Queue() for _ in range(n)],
-                "exiting": [Queue() for _ in range(n)]
+                "incoming": [Queue() for _ in range(lane_count)],
+                "exiting": [Queue() for _ in range(lane_count)]
             },
             "west": {
-                "incoming": [Queue() for _ in range(n)],
-                "exiting": [Queue() for _ in range(n)]
+                "incoming": [Queue() for _ in range(lane_count)],
+                "exiting": [Queue() for _ in range(lane_count)]
             }
         }
 
         self.locks_dict = {
             
             direction: {
-                key: [threading.Lock() for _ in range(n)]
+                key: [threading.Lock() for _ in range(lane_count)]
                 for key in ["incoming", "exiting"]
             }
             for direction in self.traffic_dict
