@@ -33,6 +33,7 @@ const Historynew = () => {
     const deleteSimulation = async (id) => {
         try{
             const response = await axios.delete(`http://127.0.0.1:8000/simulation/delete-simulation/?simulation_id=${id}`);
+            console.log("Simulation Delete:", response);
             setSimulations(simulations.filter(sim => sim.simulation_id !== id));
             if(current && current.simulation_id === id){
                 setCurrent(null);

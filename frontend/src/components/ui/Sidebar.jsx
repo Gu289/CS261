@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Link } from "react-router-dom";
 import axios from 'axios';
 
-const Sidebar = ( { handleSimId, handleResults, setStartAnimation }) => {
+const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionConfig }) => {
 
   // used to efficiently map and return Input Form components
   const directions = ["north", "east", "south", "west"]
@@ -26,6 +26,8 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation }) => {
     leftTurn: false,
     numLanes: 2
   })
+
+
   
   // change traffic data according to user
   // direction: north, east, south, west
@@ -65,25 +67,60 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation }) => {
 
   // validation function when user tries to start simulation
   const validateTrafficValues = () => {
+    let allZero = true;
+
     for(const dir of directions){
       const inbound = trafficData[dir].inbound;
       const outboundSum = Object.entries(trafficData[dir])
         .filter(([key]) => key !== "inbound")
         .reduce((sum, [, value]) => sum + value, 0)
-        if(inbound !== outboundSum){
-          setErrorMsg("Inputs invalid. Inbound value must be equal to sum of Outbound values.")
-          setStartSim(false)
-          return false;
-        }
-        else if(inbound > 2000){
-          setErrorMsg("Inputs invalid. Values must not exceed 2000vph.")
-          setStartSim(false)
-          return false
-        }  
+
+      if(inbound !== outboundSum){
+        setErrorMsg("Inputs invalid. Inbound value must be equal to sum of Outbound values.")
+        setStartSim(false)
+        return false;
       }
+      if(inbound > 2000){
+        setErrorMsg("Inputs invalid. Values must not exceed 2000vph.")
+        setStartSim(false)
+        return false
+      }  
+      if(inbound !== 0 || outboundSum !== 0){
+        allZero = false;
+      }
+    }
+
+    if(allZero){
+      setErrorMsg("Inputs invalid. All values cannot be zero.")
+      setStartSim(false)
+      return false;
+    }
       setErrorMsg("")
+      handleConfig()
       return true
   }
+
+  const handleConfig = () => {
+    const transformTrafficData = (data) => {
+      let trafficFlow = [];
+  
+      Object.keys(data).forEach((from) => {
+        if (from === "leftTurn" || from === "numLanes") return; // Ignore these fields
+  
+        Object.keys(data[from]).forEach((to) => {
+          if (to !== "inbound" && data[from][to] > 0) {
+            trafficFlow.push({ from, to, vph: data[from][to] });
+          }
+        });
+      });
+  
+      return trafficFlow;
+    };
+  
+    const newConfig = transformTrafficData(trafficData);
+    setJunctionConfig(newConfig);
+  }
+  
 
   // send post request to backend to create the simulation and receive the simulation id
   // then send post request with given simulation id to start the simulation
@@ -148,8 +185,10 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation }) => {
           <InputMenu key={index} inboundDirection={direction} directions={directions} handleTrafficChange={handleTrafficChange} trafficData={trafficData}/>
         ))}
         <ConfigMenu trafficData={trafficData} handleConfigurable={handleConfigurable} />
-        <div className="flex justify-center">
-          <button type="button" disabled={startSim} onClick={() => setStartSim(true)} className="text-2xl rounded-lg text-white bg-accent px-5 py-3 shadow-md cursor-pointer hover:bg-accent-hover transition duration-300">Start Simulation</button>
+        <div className="flex flex-col items-center gap-2">
+          <button type="button" disabled={startSim} onClick={() => setStartSim(true)} className={`w-full text-2xl rounded-lg text-white px-5 py-3 shadow-md transition duration-300 
+    ${startSim ? "bg-gray-400 cursor-not-allowed" : "bg-accent hover:bg-accent-hover cursor-pointer"}`}>Start Simulation</button>
+          {errorMsg && <p className="text-red-500">{errorMsg}</p>}
         </div>
       </div>
     </div>

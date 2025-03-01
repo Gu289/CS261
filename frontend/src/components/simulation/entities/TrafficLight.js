@@ -1,12 +1,12 @@
 export default class TrafficLight{
 
     static instances = []
-
+    static currentPhase = 0;
     static positions = {
-        0: {x: 311, y: 238, angle:0, isRed: true}, // north traffic light
-        1: {x: 338, y: 328, angle:Math.PI / 2, isRed: false}, // east traffic light
-        2: {x: 246, y: 356, angle:0, isRed: true}, // south traffic light
-        3: {x: 220, y: 265, angle:Math.PI / 2, isRed: false}
+        0: {x: 311, y: 238, angle:0, isRed: false}, // north traffic light
+        1: {x: 338, y: 328, angle:Math.PI / 2, isRed: true}, // east traffic light
+        2: {x: 246, y: 356, angle:0, isRed: false}, // south traffic light
+        3: {x: 220, y: 265, angle:Math.PI / 2, isRed: true}
     }
 
 
@@ -20,13 +20,62 @@ export default class TrafficLight{
         this.width = this.img.width * 0.14
         this.height = this.img.height * 0.14
         TrafficLight.instances.push(this)
-        setInterval(this.toggleLight.bind(this), 10000);
+        // setInterval(this.toggleLight.bind(this), 10000);
     }
 
-    toggleLight(){
-        this.isRed = !this.isRed;
-        this.img = this.isRed ? this.images.red : this.images.green; 
+    setLight(isRed) {
+        this.isRed = isRed;
+        this.img = isRed ? this.images.red : this.images.green;
     }
+
+    static toggleLights() {
+        // Phase 0: NS Green, EW Red → Phase 1: All Red → Phase 2: EW Green, NS Red
+        if (TrafficLight.currentPhase === 0) {
+            TrafficLight.instances.forEach(light => light.setLight(true)); // All Red
+            TrafficLight.currentPhase = 1;
+
+            setTimeout(() => {
+                TrafficLight.instances.forEach(light => {
+                    if (light.cardinal % 2 !== 0) light.setLight(false); // EW Green
+                });
+                TrafficLight.currentPhase = 2;
+            }, 3000); // 3-second delay before turning green
+
+        } else if (TrafficLight.currentPhase === 2) {
+            TrafficLight.instances.forEach(light => light.setLight(true)); // All Red
+            TrafficLight.currentPhase = 1;
+
+            setTimeout(() => {
+                TrafficLight.instances.forEach(light => {
+                    if (light.cardinal % 2 === 0) light.setLight(false); // NS Green
+                });
+                TrafficLight.currentPhase = 0;
+            }, 3000);
+        }
+    }
+
+    // toggleLight(){
+
+    //     if(this.isRed){
+    //         this.isRed = false;
+    //         this.img = this.images.green;
+    //     } else{
+    //         this.isRed = true;
+    //         this.img = this.images.red;
+
+    //         setTimeout(() => {
+    //             TrafficLight.instances.forEach(light => {
+    //                 if(light.cardinal === (this.cardinal + 2) % 4 && light.isRed){
+    //                     light.isRed = false
+    //                     light.img = light.images.green
+    //                 }
+    //             })
+    //         }, 3000)
+    //     }
+
+    //     this.isRed = !this.isRed;
+    //     this.img = this.isRed ? this.images.red : this.images.green; 
+    // }
 
     draw(ctx){
         if(this.img.complete){
@@ -49,13 +98,3 @@ export default class TrafficLight{
     }
 
 }
-
-/**
- * make traffic lights object
- * positionate traffic lights
- * add traffic light red and green images
- * show traffic light state in simulation
- * add logic for cars to wait for green light
- * add car collision logic
- * 
- */

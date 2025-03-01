@@ -8,22 +8,9 @@ import TrafficLight from './entities/TrafficLight';
 import { FaRegPauseCircle } from "react-icons/fa";
 import { FaRegPlayCircle } from "react-icons/fa";
 
-const Simulation = ( { startAnimation, setStartAnimation } ) => {
+const Simulation = ( { startAnimation, junctionConfig } ) => {
 
-  const trafficFlow = [
-    {from: "north", to: "east", vph: 1000},
-    {from: "north", to: "south", vph: 1000},
-    {from: "north", to: "west", vph: 1000},
-    {from: "east", to: "south", vph: 900},
-    {from: "east", to: "west", vph: 900},
-    {from: "east", to: "north", vph: 900},
-    {from: "south", to: "west", vph: 800},
-    {from: "south", to: "north", vph: 800},
-    {from: "south", to: "east", vph: 800},
-    {from: "west", to: "north", vph: 700},
-    {from: "west", to: "east", vph: 700},
-    {from: "west", to: "south", vph: 700},
-  ]
+  const trafficFlow = useRef([]);
 
   const isPausedRef = useRef(false);
 
@@ -128,6 +115,13 @@ const Simulation = ( { startAnimation, setStartAnimation } ) => {
   }
 
   useEffect(() => {
+    if(junctionConfig){
+      trafficFlow.current = junctionConfig;
+    }
+    console.log(trafficFlow.current);
+  }, [junctionConfig])
+
+  useEffect(() => {
     Promise.all([
       loadImages(carEastSrc),
       loadImages(grassSrc),
@@ -164,6 +158,9 @@ const Simulation = ( { startAnimation, setStartAnimation } ) => {
       new TrafficLight(lightImageRef.current, 2)
       new TrafficLight(lightImageRef.current, 3)
 
+        // Start the cycle every 10 seconds
+      setInterval(TrafficLight.toggleLights, 10000);
+
       // track mouse position
       frontRef.current.addEventListener("mousemove", (event) => {
         const rect = frontRef.current.getBoundingClientRect();
@@ -180,7 +177,7 @@ const Simulation = ( { startAnimation, setStartAnimation } ) => {
   // when startAnimation changes, it starts spawning cars
   useEffect(() => {
     if(startAnimation){
-      trafficFlow.forEach(({ from, to, vph }) => {
+      trafficFlow.current.forEach(({ from, to, vph }) => {
         generateCars(from, to, vph)
       })
     }

@@ -128,7 +128,54 @@ export default class Car{
         this.move();
     }
 
+    isCarInFront(otherCar){
+        const dx = otherCar.x - this.x;
+        const dy = otherCar.y - this.y;
+
+        switch (this.endDirection) {
+            case 0: // Moving up
+                return dy < 0 && Math.abs(dx) < 10;
+            case 1: // Moving right
+                return dx > 0 && Math.abs(dy) < 10;
+            case 2: // Moving down
+                return dy > 0 && Math.abs(dx) < 10;
+            case 3: // Moving left
+                return dx < 0 && Math.abs(dy) < 10;
+            default:
+                return false;
+        }
+    }
+
+
     move(){
+
+        const safeDistance = 25;
+
+        if (!this.isTurning || !this.isOut) {
+            // Find the nearest car in front in the same lane
+            let carInFront = null;
+            let minDistance = Infinity;
+    
+            for (let otherCar of Car.cars) {
+                if (otherCar === this) continue; // Skip self
+                if (otherCar.isTurning) continue; // Ignore turning cars
+    
+                // Check if the car is in the same lane (based on angle)
+                if (this.isSameLane(otherCar)) {
+                    let distance = this.getDistance(otherCar);
+                    if (distance > 0 && distance < minDistance) {
+                        minDistance = distance;
+                        carInFront = otherCar;
+                    }
+                }
+            }
+    
+            // Stop the car if there is another car in front within the stopping distance
+            if (carInFront && minDistance < safeDistance) {
+                return; // Stop moving
+            }
+        }
+        
         if(this.t < 1 && this.isTurning && (this.spawnCardinal + 2) % 4 !== this.endDirection){
 
             const curve = Car.bezierCurves[`${this.spawnCardinal}-${this.endDirection}`];
@@ -163,6 +210,41 @@ export default class Car{
             this.y += Math.sin(this.angle) * Car.speed;
         }
     }
+
+    // Check if two cars are in the same lane
+    isSameLane(otherCar) {
+        
+        const laneTolerance = 10;
+
+        if (Math.abs(this.angle - otherCar.angle) > 0.1) return false; // Not facing same direction
+
+        if (Math.abs(this.angle) < 0.1 || Math.abs(this.angle - Math.PI) < 0.1) {
+            // Moving left/right so compare Y position
+            return Math.abs(this.y - otherCar.y) < laneTolerance;
+        } else {
+            // Moving up/down so compare X position
+            return Math.abs(this.x - otherCar.x) < laneTolerance;
+        }
+    }
+
+    getDistance(otherCar) {
+        if (Math.abs(this.angle) < 0.1) {
+            // Moving right → Compare front-right edge with back-left edge
+            return otherCar.x - (this.x + this.width);
+        } else if (Math.abs(this.angle - Math.PI) < 0.1) {
+            // Moving left → Compare front-left edge with back-right edge
+            return this.x - (otherCar.x + otherCar.width);
+        } else if (Math.abs(this.angle - Math.PI / 2) < 0.1) {
+            // Moving down → Compare front-bottom edge with back-top edge
+            return otherCar.y - (this.y + this.height);
+        } else {
+            // Moving up → Compare front-top edge with back-bottom edge
+            return this.y - (otherCar.y + otherCar.height);
+        }
+    }
+    
+    
+
  
     getBezierPoint(t, P0, P1, P2){
         const x = (1 - t) ** 2 * P0.x + 2 * (1 - t) * t * P1.x + t ** 2 * P2.x;
