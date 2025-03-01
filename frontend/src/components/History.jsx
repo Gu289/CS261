@@ -98,7 +98,7 @@ const Historynew = () => {
             </div>
             
             {/* Simulations List */}
-            <div className="flex-grow">
+            <div className="flex-grow overflow-y-auto">
                 {simulations.length > 0 ? (
                     <ul>
                         {simulations.map((sim, index) => (

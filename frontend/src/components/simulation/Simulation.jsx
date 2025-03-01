@@ -158,46 +158,7 @@ const Simulation = () => {
         backgroundRef.current.height
       );
 
-      // const lightWidth = 50;
-      // const lightHeight = 100;
-      
-      // const trafficLightPositions = [
-      //   { x: backgroundRef.current.width / 2 - 8, y: 196, rotate: false }, // Top
-      //   { x: backgroundRef.current.width / 2 - 73, y: backgroundRef.current.height - 289, rotate: false }, // Bottom
-      //   { x: 217, y: backgroundRef.current.height / 2 - 100, rotate: true }, // Left
-      //   { x: backgroundRef.current.width - 269, y: backgroundRef.current.height / 2 - 36, rotate: true } // Right
-      // ];
-
-      // trafficLightPositions.forEach(({ x, y, rotate }) => {
-      //   backgroundCtx.save();
-        
-      //   if (rotate) {
-      //     backgroundCtx.translate(x + lightWidth / 2, y + lightHeight / 2);
-      //     backgroundCtx.rotate(Math.PI / 2);
-      //     backgroundCtx.drawImage(
-      //       redLightImageRef.current,
-      //       -lightWidth / 2,
-      //       -lightHeight / 2,
-      //       lightWidth + 35,
-      //       lightHeight
-      //     );
-      //   } else {
-      //     backgroundCtx.drawImage(
-      //       redLightImageRef.current,
-      //       x,
-      //       y,
-      //       lightWidth + 30,
-      //       lightHeight
-      //     );
-      //   }
-        
-      //   backgroundCtx.restore();
-      // });
-
-      // for(let i=0;i<4;i++){
-      //   greenLightStates.current.push(new TrafficLight(greenLightImageRef.current, i))
-      // }
-
+      // define the traffic lights
       new TrafficLight(lightImageRef.current, 0)
       new TrafficLight(lightImageRef.current, 1)
       new TrafficLight(lightImageRef.current, 2)
