@@ -15,37 +15,10 @@ django.setup()
 from simulation.models import Vehicle, Simulation
 
 # Global variables
-n = 2  # Number of lanes
+counter = 0
+SPEED_FACTOR = 20
 stop_event = threading.Event()
 
-# junction_config = {
-#     "north": {
-#         "inbound": 1500,
-#         "east": 500,
-#         "south": 200,
-#         "west": 800
-#     },
-#     "east": {
-#         "inbound": 550,
-#         "north": 200,
-#         "south": 150,
-#         "west": 200
-#     },
-#     "south": {
-#         "inbound": 450,
-#         "north": 100,
-#         "east":50,
-#         "west": 300
-#     },
-#     "west": {
-#         "inbound": 620,
-#         "north": 400,
-#         "east": 170,
-#         "south": 50
-#     },
-#     "leftTurn": False,
-#     "numLanes": 2
-# }
 
 class TrafficLight:
     def __init__(self, cycle_time=3):
@@ -86,12 +59,10 @@ class Enqueuer:
     def enqueue_vehicles(self, direction):
         while not self.vehicle_warehouse.is_empty(direction):
             VPH = self.junction_config[direction]["inbound"]  # Vehicles per hour
-            # print(f"[{direction} traffic]: {VPH} vehicles per second")
-
             VPS = VPH / 3600  # Vehicles per second
             SPV = 1/VPS # Seconds per vehicle
-
-            time.sleep(SPV/1000)
+            
+            time.sleep(SPV / SPEED_FACTOR)
 
             with self.locks_dict["warehouse"][direction]:
                 vehicle = self.vehicle_warehouse.get_vehicle(direction)
@@ -119,7 +90,7 @@ class Enqueuer:
                 print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {direction} traffic ] Thread for enqueueing traffic has started.")
 
 class Dequeuer:
-    def __init__(self, traffic_dict, locks_dict, max_queue_length_tracker, junction_config, traffic_light, crossing_time=1/1000):
+    def __init__(self, traffic_dict, locks_dict, max_queue_length_tracker, junction_config, traffic_light, crossing_time=1/SPEED_FACTOR):   
         self.traffic_dict = traffic_dict
         self.junction_config = junction_config
         self.traffic_light = traffic_light
@@ -142,6 +113,8 @@ class Dequeuer:
 
 
     def dequeue_vehicles(self, dir):
+        global counter
+
         # Initialize the old queue size for the incoming lanes
         old_inc_q_size = [int(lane.qsize()) for lane in self.traffic_dict[dir]["incoming"]]
 
@@ -214,7 +187,7 @@ class Dequeuer:
                                         opp_vehicle.save()
                                         time.sleep(self.CROSSING_TIME)
                                         self.traffic_dict[exit_dir]["exiting"][exit_lane].put(opp_vehicle)
-                                        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} [RIGHT-OF-WAY] Vehicle from {incoming_dir} lane {opp_idx} went straight to {exit_dir}, waited for {time_diff*1000}")
+                                        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} [RIGHT-OF-WAY] Vehicle{opp_vehicle.id} from {incoming_dir} lane {opp_idx} went straight to {exit_dir}, waited for {time_diff*SPEED_FACTOR}")
                                 
                                 # If we processed any straight-going vehicles, skip this cycle for the right-turning vehicle
                                 if straight_going_vehicles:
@@ -238,15 +211,18 @@ class Dequeuer:
                             vehicle.save()
                             time.sleep(self.CROSSING_TIME) 
                             self.traffic_dict[exit_dir]["exiting"][exit_lane].put(vehicle)
-                            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} Vehicle from {incoming_dir} exited to {exit_dir}, waited for {time_diff*1000}")
+                            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} Vehicle{vehicle.id} from {incoming_dir} exited to {exit_dir}, waited for {time_diff*SPEED_FACTOR}")
                         
+                        counter += 1
+                        print(f"COUNTERR: {counter}")
+
                     else:
                         self.max_queue_length_tracker[dir] = max(self.max_queue_length_tracker[dir], lane.qsize())
                         new_q_size = [lane.qsize() for lane in self.traffic_dict[dir]["incoming"]]
                         if new_q_size != old_inc_q_size:
                             old_inc_q_size = new_q_size
                             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {dir} traffic] Traffic light is red, current queue length: {new_q_size}")
-                         
+                       
 
     def start(self):
         for direction in self.traffic_dict:
@@ -290,16 +266,15 @@ class VehiclesWarehouse:
             case _:
                 incoming_lane = random_lane
         
-        from django.db import transaction
-        with transaction.atomic():
-            #create vehicle
-            vehicle = Vehicle.objects.create(
-                incoming_direction=incoming_direction,
-                exit_direction=exit_direction,
-                incoming_lane=incoming_lane,
-                exit_lane=list(range(lane_count))[::-1][incoming_lane]  
-            )
-            vehicle.save()
+       
+        #create vehicle
+        vehicle = Vehicle.objects.create(
+            incoming_direction=incoming_direction,
+            exit_direction=exit_direction,
+            incoming_lane=incoming_lane,
+            exit_lane=list(range(lane_count))[::-1][incoming_lane]  
+        )
+        vehicle.save()
 
         return vehicle
     
@@ -357,7 +332,7 @@ class VehiclesWarehouse:
             return all([not bool(self.warehouse[d]) for d in self.warehouse])
 
 class Junction:
-    def __init__(self, junction_config, vehicle_warehouse, traffic_light_cycle_time=20/1000):
+    def __init__(self, junction_config, vehicle_warehouse, traffic_light_cycle_time=20/SPEED_FACTOR):
         self.junction_config = junction_config
         self.vehicle_warehouse = vehicle_warehouse
         lane_count = self.junction_config["numLanes"]

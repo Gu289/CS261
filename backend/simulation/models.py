@@ -99,7 +99,8 @@ class Vehicle(models.Model):
     # def get_relative_dir(self):
     #     return Vehicle.get_relative_dir(self.incoming_direction, self.exit_direction)
 
-    # AutoField 'id' is added by default as the primary key.
+    #make car id the primary key
+    id = models.AutoField(primary_key=True)
     arrival_time = models.DateTimeField(null=True, blank=True)
     departure_time = models.DateTimeField(null=True, blank=True)
     incoming_direction = models.CharField(max_length=50, blank=False)
