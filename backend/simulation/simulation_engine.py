@@ -91,7 +91,7 @@ class Enqueuer:
             VPS = VPH / 3600  # Vehicles per second
             SPV = 1/VPS # Seconds per vehicle
 
-            time.sleep(SPV)
+            time.sleep(SPV/1000)
 
             with self.locks_dict["warehouse"][direction]:
                 vehicle = self.vehicle_warehouse.get_vehicle(direction)
@@ -118,7 +118,7 @@ class Enqueuer:
 
 
 class Dequeuer:
-    def __init__(self, traffic_dict, locks_dict, max_queue_length_tracker, junction_config, traffic_light, crossing_time=0.5):
+    def __init__(self, traffic_dict, locks_dict, max_queue_length_tracker, junction_config, traffic_light, crossing_time=1/1000):
         self.traffic_dict = traffic_dict
         self.junction_config = junction_config
         self.traffic_light = traffic_light
@@ -213,7 +213,7 @@ class Dequeuer:
                                         opp_vehicle.save()
                                         time.sleep(self.CROSSING_TIME)
                                         self.traffic_dict[exit_dir]["exiting"][exit_lane].put(opp_vehicle)
-                                        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} [RIGHT-OF-WAY] Vehicle from {incoming_dir} lane {opp_idx} went straight to {exit_dir}, waited for {time_diff}")
+                                        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} [RIGHT-OF-WAY] Vehicle from {incoming_dir} lane {opp_idx} went straight to {exit_dir}, waited for {time_diff*1000}")
                                 
                                 # If we processed any straight-going vehicles, skip this cycle for the right-turning vehicle
                                 if straight_going_vehicles:
@@ -237,7 +237,7 @@ class Dequeuer:
                             vehicle.save()
                             time.sleep(self.CROSSING_TIME) 
                             self.traffic_dict[exit_dir]["exiting"][exit_lane].put(vehicle)
-                            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} Vehicle from {incoming_dir} exited to {exit_dir}, waited for {time_diff}")
+                            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} Vehicle from {incoming_dir} exited to {exit_dir}, waited for {time_diff*1000}")
                         
                     else:
                         self.max_queue_length_tracker[dir] = max(self.max_queue_length_tracker[dir], lane.qsize())
@@ -352,7 +352,7 @@ class VehiclesWarehouse:
             return all([not bool(self.warehouse[d]) for d in self.warehouse])
 
 class Junction:
-    def __init__(self, junction_config, vehicle_warehouse, traffic_light_cycle_time=3):
+    def __init__(self, junction_config, vehicle_warehouse, traffic_light_cycle_time=20/1000):
         self.junction_config = junction_config
         self.vehicle_warehouse = vehicle_warehouse
         self.traffic_dict = {
@@ -420,7 +420,7 @@ class SimulationEngine:
         stop_event = threading.Event()
         
         self.junction_config = simulation.junction_config
-        self.vehicle_warehouse = VehiclesWarehouse(self.junction_config, 2)
+        self.vehicle_warehouse = VehiclesWarehouse(self.junction_config, 50)
         self.junction = Junction(self.junction_config, self.vehicle_warehouse, traffic_light_cycle_time)
         self.simulation = simulation
 
