@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Link } from "react-router-dom";
 import axios from 'axios';
 
-const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionConfig }) => {
+const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionConfig, setGlobalLeftTurn }) => {
 
   // used to efficiently map and return Input Form components
   const directions = ["north", "east", "south", "west"]
@@ -184,7 +184,7 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
         {directions.map((direction, index) => (
           <InputMenu key={index} inboundDirection={direction} directions={directions} handleTrafficChange={handleTrafficChange} trafficData={trafficData}/>
         ))}
-        <ConfigMenu trafficData={trafficData} handleConfigurable={handleConfigurable} />
+        <ConfigMenu trafficData={trafficData} handleConfigurable={handleConfigurable} setGlobalLeftTurn={setGlobalLeftTurn} />
         <div className="flex flex-col items-center gap-2">
           <button type="button" disabled={startSim} onClick={() => setStartSim(true)} className={`w-full text-2xl rounded-lg text-white px-5 py-3 shadow-md transition duration-300 
     ${startSim ? "bg-gray-400 cursor-not-allowed" : "bg-accent hover:bg-accent-hover cursor-pointer"}`}>Start Simulation</button>

@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import grassSrc from "../../assets/finale2.png";
+import grass2LeftSrc from "../../assets/finale3.png"
 import carEastSrc from "../../assets/car-east.png";
 import redLightSrc from "../../assets/red-light.png"; // Import traffic light
 import greenLightSrc from "../../assets/green-light.png";
@@ -8,7 +9,7 @@ import TrafficLight from './entities/TrafficLight';
 import { FaRegPauseCircle } from "react-icons/fa";
 import { FaRegPlayCircle } from "react-icons/fa";
 
-const Simulation = ( { startAnimation, junctionConfig } ) => {
+const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn } ) => {
 
   const trafficFlow = useRef([]);
 
@@ -29,7 +30,7 @@ const Simulation = ( { startAnimation, junctionConfig } ) => {
   const frontRef = useRef(null);
 
   // reference images
-  const grassImageRef = useRef(null);
+  const grassImageRef = useRef({});
   const carImageRef = useRef(null);
   const lightImageRef = useRef({});
 
@@ -115,6 +116,30 @@ const Simulation = ( { startAnimation, junctionConfig } ) => {
   }
 
   useEffect(() => {
+    if(!grassImageRef.current.twoLanesLeft) return;
+    const backgroundCtx = backgroundRef.current.getContext("2d");
+    if(globalLeftTurn){
+      backgroundCtx.drawImage(
+        grassImageRef.current.twoLanesLeft,
+        0,
+        0,
+        backgroundRef.current.width,
+        backgroundRef.current.height
+      )
+    } else{
+      backgroundCtx.drawImage(
+        grassImageRef.current.twoLanes,
+        0,
+        0,
+        backgroundRef.current.width,
+        backgroundRef.current.height
+      )
+    }
+    
+  }, [globalLeftTurn])
+
+  // changes vph after starting simulation
+  useEffect(() => {
     if(junctionConfig){
       trafficFlow.current = junctionConfig;
     }
@@ -126,15 +151,20 @@ const Simulation = ( { startAnimation, junctionConfig } ) => {
       loadImages(carEastSrc),
       loadImages(grassSrc),
       loadImages(redLightSrc),
-      loadImages(greenLightSrc)
+      loadImages(greenLightSrc),
+      loadImages(grass2LeftSrc)
     ]).then(([
       loadedCarEast,
       loadedGrassImg, 
       loadedRedLightImg,
-      loadedGreenLightImg
+      loadedGreenLightImg,
+      loadedGrass2LeftImg
     ]) => {
       carImageRef.current = loadedCarEast
-      grassImageRef.current = loadedGrassImg;
+      grassImageRef.current = {
+        twoLanes: loadedGrassImg,
+        twoLanesLeft: loadedGrass2LeftImg
+      };
       lightImageRef.current = {
         red: loadedRedLightImg,
         green: loadedGreenLightImg
@@ -145,7 +175,7 @@ const Simulation = ( { startAnimation, junctionConfig } ) => {
 
       // draw the background only once when the component mounts
       backgroundCtx.drawImage(
-        grassImageRef.current,
+        grassImageRef.current.twoLanes,
         0,
         0,
         backgroundRef.current.width,
