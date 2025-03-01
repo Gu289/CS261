@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import grassSrc from "../../assets/finale2.png";
+import grass2LeftSrc from "../../assets/finale3.png"
 import carEastSrc from "../../assets/car-east.png";
 import redLightSrc from "../../assets/red-light.png"; // Import traffic light
 import greenLightSrc from "../../assets/green-light.png";
@@ -8,22 +9,9 @@ import TrafficLight from './entities/TrafficLight';
 import { FaRegPauseCircle } from "react-icons/fa";
 import { FaRegPlayCircle } from "react-icons/fa";
 
-const Simulation = ( { startAnimation, setStartAnimation } ) => {
+const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn } ) => {
 
-  const trafficFlow = [
-    {from: "north", to: "east", vph: 1000},
-    {from: "north", to: "south", vph: 1000},
-    {from: "north", to: "west", vph: 1000},
-    {from: "east", to: "south", vph: 900},
-    {from: "east", to: "west", vph: 900},
-    {from: "east", to: "north", vph: 900},
-    {from: "south", to: "west", vph: 800},
-    {from: "south", to: "north", vph: 800},
-    {from: "south", to: "east", vph: 800},
-    {from: "west", to: "north", vph: 700},
-    {from: "west", to: "east", vph: 700},
-    {from: "west", to: "south", vph: 700},
-  ]
+  const trafficFlow = useRef([]);
 
   const isPausedRef = useRef(false);
 
@@ -42,7 +30,7 @@ const Simulation = ( { startAnimation, setStartAnimation } ) => {
   const frontRef = useRef(null);
 
   // reference images
-  const grassImageRef = useRef(null);
+  const grassImageRef = useRef({});
   const carImageRef = useRef(null);
   const lightImageRef = useRef({});
 
@@ -128,19 +116,55 @@ const Simulation = ( { startAnimation, setStartAnimation } ) => {
   }
 
   useEffect(() => {
+    if(!grassImageRef.current.twoLanesLeft) return;
+    const backgroundCtx = backgroundRef.current.getContext("2d");
+    if(globalLeftTurn){
+      backgroundCtx.drawImage(
+        grassImageRef.current.twoLanesLeft,
+        0,
+        0,
+        backgroundRef.current.width,
+        backgroundRef.current.height
+      )
+    } else{
+      backgroundCtx.drawImage(
+        grassImageRef.current.twoLanes,
+        0,
+        0,
+        backgroundRef.current.width,
+        backgroundRef.current.height
+      )
+    }
+    
+  }, [globalLeftTurn])
+
+  // changes vph after starting simulation
+  useEffect(() => {
+    if(junctionConfig){
+      trafficFlow.current = junctionConfig;
+    }
+    console.log(trafficFlow.current);
+  }, [junctionConfig])
+
+  useEffect(() => {
     Promise.all([
       loadImages(carEastSrc),
       loadImages(grassSrc),
       loadImages(redLightSrc),
-      loadImages(greenLightSrc)
+      loadImages(greenLightSrc),
+      loadImages(grass2LeftSrc)
     ]).then(([
       loadedCarEast,
       loadedGrassImg, 
       loadedRedLightImg,
-      loadedGreenLightImg
+      loadedGreenLightImg,
+      loadedGrass2LeftImg
     ]) => {
       carImageRef.current = loadedCarEast
-      grassImageRef.current = loadedGrassImg;
+      grassImageRef.current = {
+        twoLanes: loadedGrassImg,
+        twoLanesLeft: loadedGrass2LeftImg
+      };
       lightImageRef.current = {
         red: loadedRedLightImg,
         green: loadedGreenLightImg
@@ -151,7 +175,7 @@ const Simulation = ( { startAnimation, setStartAnimation } ) => {
 
       // draw the background only once when the component mounts
       backgroundCtx.drawImage(
-        grassImageRef.current,
+        grassImageRef.current.twoLanes,
         0,
         0,
         backgroundRef.current.width,
@@ -163,6 +187,9 @@ const Simulation = ( { startAnimation, setStartAnimation } ) => {
       new TrafficLight(lightImageRef.current, 1)
       new TrafficLight(lightImageRef.current, 2)
       new TrafficLight(lightImageRef.current, 3)
+
+        // Start the cycle every 10 seconds
+      setInterval(TrafficLight.toggleLights, 10000);
 
       // track mouse position
       frontRef.current.addEventListener("mousemove", (event) => {
@@ -180,7 +207,7 @@ const Simulation = ( { startAnimation, setStartAnimation } ) => {
   // when startAnimation changes, it starts spawning cars
   useEffect(() => {
     if(startAnimation){
-      trafficFlow.forEach(({ from, to, vph }) => {
+      trafficFlow.current.forEach(({ from, to, vph }) => {
         generateCars(from, to, vph)
       })
     }

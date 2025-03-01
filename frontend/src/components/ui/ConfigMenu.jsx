@@ -1,8 +1,9 @@
 
-const ConfigMenu = ({ trafficData, handleConfigurable }) => {
+const ConfigMenu = ({ trafficData, handleConfigurable, setGlobalLeftTurn }) => {
 
     const handleLeftTurn = (e) => {
         handleConfigurable("leftTurn", e.target.checked)
+        setGlobalLeftTurn(e.target.checked)
     }
 
     const handleLanes = (e) => {
