@@ -113,6 +113,28 @@ const Home = ({ handleSimId }) => {
 
         {simulationData ? (
         <>
+          {/* Add Efficiency Score Section */}
+          <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">Efficiency Score</h3>
+              <div className="bg-gray-100 p-4 rounded flex items-center">
+                  <div className="w-20 h-20 rounded-full bg-white border-4 border-blue-500 flex items-center justify-center mr-4">
+                      <span className="text-2xl font-bold">
+                          {simulationData.efficiency_score ? simulationData.efficiency_score : 'N/A'}
+                      </span>
+                  </div>
+                  <div>
+                      <p className="font-medium">
+                          {simulationData.efficiency_score >= 80 ? 'Excellent' : 
+                          simulationData.efficiency_score >= 60 ? 'Good' : 
+                          simulationData.efficiency_score >= 40 ? 'Average' : 'Needs Improvement'}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                          Based on average wait times, maximum wait times, and queue lengths across all directions
+                      </p>
+                  </div>
+              </div>
+          </div>
+    
             <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2">Metrics</h3>
             {simulationData.metrics ? (

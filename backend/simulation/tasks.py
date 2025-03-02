@@ -24,7 +24,8 @@ def run_simulation(simulation_id):
         
         # Run the simulation
         results = engine.start()
-        simulation.metrics = results
+        simulation.metrics = results.get("metrics", {})
+        simulation.efficiency_score = results.get("efficiency_score", None)
         simulation.simulation_status = "completed"
         simulation.save()
         
