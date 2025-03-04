@@ -9,7 +9,7 @@ import TrafficLight from './entities/TrafficLight';
 import { FaRegPauseCircle } from "react-icons/fa";
 import { FaRegPlayCircle } from "react-icons/fa";
 
-const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn } ) => {
+const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } ) => {
 
   const trafficFlow = useRef([]);
 
@@ -235,6 +235,7 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn } ) => {
         </h1>
       </div>
       <nav className='bg-gray-200 w-full shadow-md p-4 rounded-lg flex justify-center items-center space-x-4'>
+        <p>The simulation {status}</p>
         {!isPaused && <FaRegPauseCircle className='w-6 h-6 cursor-pointer' onClick={togglePause}/>}
         {isPaused && <FaRegPlayCircle className='w-6 h-6 cursor-pointer' onClick={togglePause}/>}
         <select

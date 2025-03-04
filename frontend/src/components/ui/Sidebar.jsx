@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Link } from "react-router-dom";
 import axios from 'axios';
 
-const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionConfig, setGlobalLeftTurn }) => {
+const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionConfig, setGlobalLeftTurn, setStatus }) => {
 
   // used to efficiently map and return Input Form components
   const directions = ["north", "east", "south", "west"]
@@ -149,11 +149,13 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
     // if inputs are valid then send to backend and start the simulation
     if(validateTrafficValues()){
       createSimulation().then((sim_id) => {
+        setStatus("is running")
         const interval = setInterval(async () => {
           try{
             const { data } = await axios.get(`http://127.0.0.1:8000/simulation/check-simulation-status/?simulation_id=${sim_id}`)
             console.log(data);
             if(data.simulation_status === "completed"){
+              setStatus("is completed")
               clearInterval(interval)
               displayResults(data);
             } else if(data.simulation_status === "failed"){
@@ -161,6 +163,7 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
             }
           } catch(error){
             console.error("Error checking simulation status:", error);
+            setStatus("has failed")
             clearInterval(interval);
           }
         }, 3000)
