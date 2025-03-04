@@ -6,7 +6,7 @@ class Simulation(models.Model):
     max_wait_time = models.FloatField(blank=True, null=True)
     avg_wait_time = models.FloatField(blank=True, null=True)
     max_queue_length = models.IntegerField(blank=True, null=True)
-    efficiency_score = models.FloatField(blank=True, null=True)
+    efficiency_score = models.FloatField(default=0.0)
     metrics = models.JSONField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     junction_config = models.JSONField(blank=False)
@@ -99,7 +99,8 @@ class Vehicle(models.Model):
     # def get_relative_dir(self):
     #     return Vehicle.get_relative_dir(self.incoming_direction, self.exit_direction)
 
-    # AutoField 'id' is added by default as the primary key.
+    #make car id the primary key
+    id = models.AutoField(primary_key=True)
     arrival_time = models.DateTimeField(null=True, blank=True)
     departure_time = models.DateTimeField(null=True, blank=True)
     incoming_direction = models.CharField(max_length=50, blank=False)
