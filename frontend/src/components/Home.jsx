@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "./ui/Sidebar";
 import Simulation from "./simulation/Simulation";
-import axios from "axios";
 
 
 const Home = ({ handleSimId }) => {

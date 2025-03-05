@@ -14,6 +14,7 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
   // when true the button becomes disabled
   const [startSim, setStartSim] = useState(false) 
 
+  // error message to display when inputs are invalid
   const [errorMsg, setErrorMsg] = useState("")
 
   // state containing all traffic data
@@ -27,33 +28,15 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
     numLanes: 2
   })
 
-
-  
-  // change traffic data according to user
-  // direction: north, east, south, west
-  // type: inbound, north, east, south, west (each direction is outbound)
-  // passed down to InputMenu -> InboundItem and OutboundItem to change values
+  // change traffic data by copying previous state and updating the new value
   const handleTrafficChange = (direction, type, value) => {
-    const num = Number(value)
-    // only accept numeric values
-    if(!isNaN(num) && value !== ""){
-      // copy the whole previous state, but then change specific direction and inbound/outbound with value
-      setTrafficData((prev) => ({
-        ...prev,
-        [direction]: {
-          ...prev[direction],
-          [type]: Number(value),
-        }
-      }))
-    } else if(value === ""){
-      setTrafficData((prev) => ({
-        ...prev,
-        [direction]: {
-          ...prev[direction],
-          [type]: 0,
-        }
-      }))
-    }
+    setTrafficData((prev) => ({
+      ...prev,
+      [direction]: {
+        ...prev[direction],
+        [type]: value,
+      }
+    }))
   }
 
   // change configurable parameters value
@@ -65,26 +48,67 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
       }))
     }
 
-  // validation function when user tries to start simulation
-  const validateTrafficValues = () => {
+  const validateInput = () => {
     let allZero = true;
 
     for(const dir of directions){
-      const inbound = trafficData[dir].inbound;
-      const outboundSum = Object.entries(trafficData[dir])
+      
+      const inboundStr = String(trafficData[dir].inbound).trim();
+
+      // empty input so invalid
+      if(inboundStr === ""){
+        setErrorMsg("Inputs empty. Please fill all inputs.")
+        setStartSim(false)
+        return false
+      }
+
+      const inbound = Number(inboundStr);
+
+      // non numeric characters so invalid
+      if(isNaN(inbound)){
+        setErrorMsg("Inputs invalid. All values must be numeric.")
+        setStartSim(false)
+        return false
+      }
+
+      // negative or zero values so invalid
+      if(inbound <= 0){
+        setErrorMsg("Inputs invalid. All values must be greater than 0.")
+        setStartSim(false)
+        return false
+      }
+
+      if(inbound > 2000){
+        setErrorMsg("Inputs invalid. All values must be less than 2000.")
+        setStartSim(false)
+        return false
+      }
+
+      // convert to string, trim then convert to number
+      const outboundValues = Object.entries(trafficData[dir])
         .filter(([key]) => key !== "inbound")
-        .reduce((sum, [, value]) => sum + value, 0)
+        .map(([, value]) => Number(String(value).trim()));
+
+      if(outboundValues.some(val => isNaN(val))){
+        setErrorMsg("Inputs invalid. All values must be numeric.")
+        setStartSim(false)
+        return false;
+      }
+
+      if(outboundValues.some(val => val < 0)){
+        setErrorMsg("Inputs invalid. All values must be greater than 0.")
+        setStartSim(false)
+        return false
+      }
+
+      const outboundSum = outboundValues.reduce((sum, val) => sum + val, 0);
 
       if(inbound !== outboundSum){
         setErrorMsg("Inputs invalid. Inbound value must be equal to sum of Outbound values.")
         setStartSim(false)
-        return false;
-      }
-      if(inbound > 2000){
-        setErrorMsg("Inputs invalid. Values must not exceed 2000vph.")
-        setStartSim(false)
         return false
-      }  
+      }
+
       if(inbound !== 0 || outboundSum !== 0){
         allZero = false;
       }
@@ -93,11 +117,12 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
     if(allZero){
       setErrorMsg("Inputs invalid. All values cannot be zero.")
       setStartSim(false)
-      return false;
+      return false
     }
-      setErrorMsg("")
-      handleConfig()
-      return true
+
+    setErrorMsg("")
+    handleConfig()
+    return true
   }
 
   const handleConfig = () => {
@@ -147,7 +172,7 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
     if(!startSim) return; 
 
     // if inputs are valid then send to backend and start the simulation
-    if(validateTrafficValues()){
+    if(validateInput()){
       createSimulation().then((sim_id) => {
         setStatus("is running")
         const interval = setInterval(async () => {
