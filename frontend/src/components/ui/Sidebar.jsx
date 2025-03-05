@@ -216,7 +216,7 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
         <div className="flex flex-col items-center gap-2">
           <button type="button" disabled={startSim} onClick={() => setStartSim(true)} className={`w-full text-2xl rounded-lg text-white px-5 py-3 shadow-md transition duration-300 
     ${startSim ? "bg-gray-400 cursor-not-allowed" : "bg-accent hover:bg-accent-hover cursor-pointer"}`}>Start Simulation</button>
-          {errorMsg && <p className="text-red-500">{errorMsg}</p>}
+          {errorMsg && <p className="text-red-500 text-center p-2">{errorMsg}</p>}
         </div>
       </div>
     </div>
