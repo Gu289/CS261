@@ -20,10 +20,10 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
   // state containing all traffic data
   // passed down to InputMenu -> InboundItem and InputMenu -> OutboundItem to show changed values
   const [trafficData, setTrafficData] = useState({
-    north: { inbound: 0, east: 0, south: 0, west: 0},
-    east: { inbound: 0, north: 0, south: 0, west: 0},
-    south: { inbound: 0, north: 0, east: 0, west: 0},
-    west:{ inbound: 0, north: 0, east: 0, south: 0},
+    north: { inbound: 2000, east: 1000, south: 500, west: 500},
+    east: { inbound: 2000, north: 1000, south: 500, west: 500},
+    south: { inbound: 2000, north: 1000, east: 500, west: 500},
+    west:{ inbound: 2000, north: 1000, east: 500, south: 500},
     leftTurn: false,
     numLanes: 2
   })
@@ -181,21 +181,23 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
     // if inputs are valid then send to backend and start the simulation
     if(validateInput()){
       createSimulation().then((sim_id) => {
-        setStatus("is running")
+        setStatus("Running")
         const interval = setInterval(async () => {
           try{
             const { data } = await axios.get(`http://127.0.0.1:8000/simulation/check-simulation-status/?simulation_id=${sim_id}`)
             console.log(data);
             if(data.simulation_status === "completed"){
-              setStatus("is completed")
+              setStatus("Completed")
               clearInterval(interval)
               displayResults(data);
+              setStartSim(false);
             } else if(data.simulation_status === "failed"){
               throw "Simulation Failed"
             }
           } catch(error){
             console.error("Error checking simulation status:", error);
-            setStatus("has failed")
+            setStatus("Failed")
+            setStartSim(false)
             clearInterval(interval);
           }
         }, 3000)

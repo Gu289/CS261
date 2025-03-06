@@ -134,7 +134,7 @@ const Historynew = () => {
                             return true
                         }
                     }) && <p>Highest Scoring Simulation!</p>}
-                    <p className="text-lg mb-2">Efficiency Score</p>
+                    <p className="text-lg font-semibold mb-2">Efficiency Score</p>
                     <div className="bg-gray-100 p-4 rounded flex items-center">
                   <div className="w-20 h-20 rounded-full bg-white border-4 border-blue-500 flex items-center justify-center mr-4">
                       <span className="text-2xl font-bold">
@@ -152,7 +152,7 @@ const Historynew = () => {
                       </p>
                   </div>
               </div>
-                    <p className="text-xl mt-5">Key Parameters</p>
+                    <p className="text-xl font-semibold mt-5">Key Parameters</p>
                     {current.metrics && (
                             <ul className="grid grid-cols-2 gap-5 mt-5">
                                 {Object.entries(current.metrics).map(([direction, values]) => (
@@ -168,14 +168,14 @@ const Historynew = () => {
                                                 word = "Maximum Queue Length"
                                             }
 
-                                            return (<p key={metric}>{word}: {value}</p>)
+                                            return (<p key={metric}>{word}: {Math.round(value)}</p>)
                                         })}
                                     </li>
                                 ))}
                             </ul>
                     )}
 
-                    <p className="text-xl mt-5">Junction Configurations</p>
+                    <p className="text-xl font-semibold mt-5">Junction Configurations</p>
                     {current.junction_config && (
                         <ul className="grid grid-cols-2 gap-5 mt-5">
                             {Object.entries(current.junction_config).filter(([key, _]) => key !== "leftTurn" && key !== "numLanes").map(([direction, values]) => (
@@ -189,12 +189,12 @@ const Historynew = () => {
                         </ul>
                     )}
 
-                    <p className="text-xl mt-5">Configurable Parameters</p>
+                    <p className="text-xl font-semibold mt-5">Configurable Parameters</p>
                     <div className="mt-2">
                         <p>Left Turn Lane: {current.junction_config.leftTurn ? "Yes" : "No"}</p>
                         <p>Number of Lanes: {current.junction_config.numLanes}</p>
                     </div>
-                    <p className="text-xl mt-5">Other Informations</p>
+                    <p className="text-xl font-semibold mt-5">Other Informations</p>
                     <div className="mt-2">
                         <p>Creation Date: {current.created_at.split("T")[0]}</p>
                     </div>

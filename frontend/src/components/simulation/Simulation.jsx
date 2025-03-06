@@ -46,6 +46,14 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
     );
   };
 
+  useEffect(() => {
+    if(status === "Completed" || status === "Failed"){
+      Object.values(spawnIntervals.current).forEach(clearInterval);
+      spawnIntervals.current = {};
+      Car.cars = []
+    }
+  }, [status])
+
   const updateState = () => {
     // remove cars out of bounds
     Car.cars = Car.cars.filter(car => !(car.x > 600 || car.y > 600 || car.x < 0 || car.y < 0));
@@ -130,7 +138,7 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
     if(junctionConfig){
       trafficFlow.current = junctionConfig;
     }
-    console.log(trafficFlow.current);
+    // console.log(trafficFlow.current);
   }, [junctionConfig])
 
   useEffect(() => {
@@ -188,12 +196,7 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
       animationLoop(frontCtx, backgroundCtx);
     });
 
-    return () => {
-      cancelAnimationFrame(animationFrameRef.current);
-      const frontCtx = frontRef.current.getContext("2d");
-      frontCtx.clearRect(0, 0, frontRef.current.width, frontRef.current.height);
-      Object.values(spawnIntervals.current).forEach(clearInterval);
-    };
+    return () => cancelAnimationFrame(animationFrameRef.current);
   }, []);
 
   // when startAnimation changes, it starts spawning cars
@@ -204,7 +207,6 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
       })
     }
 
-    return () => cancelAnimationFrame(animationFrameRef.current);
   }, [startAnimation])
 
   return (
@@ -228,9 +230,11 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
           x={x}, y={y}
         </h1>
       </div>
-      <nav className='bg-gray-200 w-full shadow-md p-4 rounded-lg flex justify-center items-center space-x-4'>
-        <p>The simulation {status}</p>
-        <select
+      <nav className='bg-gray-200 w-full shadow-md p-4 rounded-lg flex justify-center items-center space-x-12'>
+        <p className='text-lg'>Simulation Status: {status}</p>
+        <div className='flex items-center space-x-2'>
+          <p className='text-lg'>Timelapse: </p>
+          <select
           value={speed}
           onChange={(e) => {
             Car.speed = e.target.value
@@ -243,6 +247,8 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
           <option value={2}>2x</option>
           <option value={4}>4x</option>
         </select>
+        </div>
+        
       </nav>
     </div>
   );

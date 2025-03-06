@@ -7,14 +7,14 @@ import axios from "axios";
 
 
 const Home = ({ handleSimId }) => {
-  const [showResults, setShowResults] = useState(false);
+  const [showResults, setShowResults] = useState(true);
   const [simulationData, setSimulationData] = useState(null);
   const [simulationId, setSimulationId] = useState(null);
   const [error, setError] = useState(null);
   const [startAnimation, setStartAnimation] = useState(false);
   const [junctionConfig, setJunctionConfig] = useState({});
   const [globalLeftTurn, setGlobalLeftTurn] = useState(false);
-  const [status, setStatus] = useState("has not started");
+  const [status, setStatus] = useState("Not started");
 
   // Callback triggered when simulation starts/completes
   const handleResults = (data) => {
@@ -104,7 +104,7 @@ const Home = ({ handleSimId }) => {
         open
         className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg shadow-xl z-50 max-w-4xl w-3/4 max-h-[80vh] overflow-y-auto"
     >
-        <h2 className="text-xl font-bold mb-4">Simulation Results</h2>
+        <h2 className="text-2xl font-bold mb-4">Simulation Results</h2>
 
         {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -138,7 +138,7 @@ const Home = ({ handleSimId }) => {
     
             <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2">Metrics</h3>
-            {simulationData.metrics ? (
+            {/* {simulationData.metrics ? (
                 <div className="bg-gray-100 p-3 rounded">
                 {Object.entries(simulationData.metrics).map(([key, value]) => (
                     <div key={key} className="mb-1">
@@ -148,11 +148,34 @@ const Home = ({ handleSimId }) => {
                 </div>
             ) : (
                 <p>No metrics available</p>
+            )} */}
+            {simulationData.metrics ? (
+              <ul className="grid grid-cols-2 gap-5 mt-5 bg-gray-100 p-3 rounded">
+                  {Object.entries(simulationData.metrics).map(([direction, values]) => (
+                      <li key={direction}>
+                          <p className="text-lg font-bold capitalize">{direction}</p>
+                          {Object.entries(values).map(([metric, value]) => {
+                              let word = ""
+                              if(metric === "average_waiting_time"){
+                                  word = "Average Waiting Time"
+                              } else if(metric === "max_waiting_time"){
+                                  word = "Maximum Waiting Time"
+                              } else{
+                                  word = "Maximum Queue Length"
+                              }
+
+                              return (<p key={metric}>{word}: {Math.round(value)}</p>)
+                          })}
+                      </li>
+                  ))}
+              </ul>
+            ) : (
+              <p>No Metrics Available</p>
             )}
             </div>
             <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2">Junction Configuration</h3>
-            {simulationData.junction_config ? (
+            {/* {simulationData.junction_config ? (
                 <div className="bg-gray-100 p-3 rounded">
                 {Object.entries(simulationData.junction_config).map(
                     ([region, config]) => (
@@ -167,6 +190,20 @@ const Home = ({ handleSimId }) => {
                 </div>
             ) : (
                 <p>No junction configuration available</p>
+            )} */}
+            {simulationData.junction_config ? (
+                        <ul className="grid grid-cols-2 gap-5 mt-5 bg-gray-100 rounded p-3">
+                            {Object.entries(simulationData.junction_config).filter(([key, _]) => key !== "leftTurn" && key !== "numLanes").map(([direction, values]) => (
+                                <li key={direction}>
+                                    <p className="text-lg font-bold capitalize">{direction}</p>
+                                    {Object.entries(values).map(([metric, value]) => (
+                                        <p key={metric}>{metric.charAt(0).toUpperCase() + metric.slice(1)}: {value}</p>
+                                    ))}
+                                </li>
+                            ))}
+                        </ul>
+            ) : (
+              <p>No junction configuration available</p>
             )}
             </div>
         </>
@@ -176,7 +213,7 @@ const Home = ({ handleSimId }) => {
 
         <button
         onClick={closeDialog}
-        className="mt-6 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        className="mt-6 px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover cursor-pointer"
         >
         Close
         </button>
