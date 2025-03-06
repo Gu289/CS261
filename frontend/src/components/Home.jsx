@@ -7,7 +7,7 @@ import axios from "axios";
 
 
 const Home = ({ handleSimId }) => {
-  const [showResults, setShowResults] = useState(true);
+  const [showResults, setShowResults] = useState(false);
   const [simulationData, setSimulationData] = useState(null);
   const [simulationId, setSimulationId] = useState(null);
   const [error, setError] = useState(null);
