@@ -1,13 +1,19 @@
 import { useRef, useEffect, useState } from 'react';
-import grassSrc from "../../assets/finale2.png";
-import grass2LeftSrc from "../../assets/finale3.png"
+import oneLaneSrc from "../../assets/oneLane.png"
+import twoLanesSrc from "../../assets/twoLanes.png";
+import twoLanesLeftSrc from "../../assets/twoLanesLeft.png"
+import threeLanesSrc from "../../assets/threeLanes.png"
+import fourLanesSrc from "../../assets/fourLanes.png"
+import fiveLanesSrc from "../../assets/fiveLanes.png"
+
+
 import carEastSrc from "../../assets/car-east.png";
 import redLightSrc from "../../assets/red-light.png"; // Import traffic light
 import greenLightSrc from "../../assets/green-light.png";
 import Car from './entities/Car';
 import TrafficLight from './entities/TrafficLight';
 
-const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } ) => {
+const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, globalLanes, status } ) => {
 
   const trafficFlow = useRef([]);
 
@@ -25,7 +31,7 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
   const frontRef = useRef(null);
 
   // reference images
-  const grassImageRef = useRef({});
+  const mapImagesRef = useRef({});
   const carImageRef = useRef(null);
   const lightImageRef = useRef({});
 
@@ -110,20 +116,41 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
 
   }
 
+  // handles left turn configuration
   useEffect(() => {
-    if(!grassImageRef.current.twoLanesLeft) return;
+    if(!mapImagesRef.current.twoLanesLeft) return;
+
     const backgroundCtx = backgroundRef.current.getContext("2d");
+
     if(globalLeftTurn){
       backgroundCtx.drawImage(
-        grassImageRef.current.twoLanesLeft,
+        mapImagesRef.current.twoLanesLeft,
         0,
         0,
         backgroundRef.current.width,
         backgroundRef.current.height
       )
     } else{
+      let current = null
+      switch(Number(globalLanes)){
+        case 1:
+          current = mapImagesRef.current.oneLane
+          break;
+        case 2:
+          current = mapImagesRef.current.twoLanes
+          break;
+        case 3:
+          current = mapImagesRef.current.threeLanes
+          break;
+        case 4:
+          current = mapImagesRef.current.fourLanes
+          break;
+        case 5:
+          current = mapImagesRef.current.fiveLanes
+          break;
+      }
       backgroundCtx.drawImage(
-        grassImageRef.current.twoLanes,
+        current,
         0,
         0,
         backgroundRef.current.width,
@@ -131,7 +158,8 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
       )
     }
     
-  }, [globalLeftTurn])
+  }, [globalLeftTurn, globalLanes])
+
 
   // changes vph after starting simulation
   useEffect(() => {
@@ -144,21 +172,34 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
   useEffect(() => {
     Promise.all([
       loadImages(carEastSrc),
-      loadImages(grassSrc),
+      loadImages(twoLanesSrc),
       loadImages(redLightSrc),
       loadImages(greenLightSrc),
-      loadImages(grass2LeftSrc)
+      loadImages(twoLanesLeftSrc),
+      loadImages(oneLaneSrc),
+      loadImages(threeLanesSrc),
+      loadImages(fourLanesSrc),
+      loadImages(fiveLanesSrc),
+
     ]).then(([
       loadedCarEast,
-      loadedGrassImg, 
+      loadedTwoLanesImg, 
       loadedRedLightImg,
       loadedGreenLightImg,
-      loadedGrass2LeftImg
+      loadedTwoLanesLeftImg,
+      loadedOneLaneImg,
+      loadedThreeLanesImg,
+      loadedFourLanesImg,
+      loadedFiveLanesImg
     ]) => {
       carImageRef.current = loadedCarEast
-      grassImageRef.current = {
-        twoLanes: loadedGrassImg,
-        twoLanesLeft: loadedGrass2LeftImg
+      mapImagesRef.current = {
+        oneLane: loadedOneLaneImg,
+        twoLanes: loadedTwoLanesImg,
+        twoLanesLeft: loadedTwoLanesLeftImg,
+        threeLanes: loadedThreeLanesImg,
+        fourLanes: loadedFourLanesImg,
+        fiveLanes: loadedFiveLanesImg 
       };
       lightImageRef.current = {
         red: loadedRedLightImg,
@@ -170,21 +211,12 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
 
       // draw the background only once when the component mounts
       backgroundCtx.drawImage(
-        grassImageRef.current.twoLanes,
+        mapImagesRef.current.twoLanes,
         0,
         0,
         backgroundRef.current.width,
         backgroundRef.current.height
       );
-
-      // define the traffic lights
-      new TrafficLight(lightImageRef.current, 0)
-      new TrafficLight(lightImageRef.current, 1)
-      new TrafficLight(lightImageRef.current, 2)
-      new TrafficLight(lightImageRef.current, 3)
-
-        // Start the cycle every 10 seconds
-      setInterval(TrafficLight.toggleLights, 10000);
 
       // track mouse position
       frontRef.current.addEventListener("mousemove", (event) => {
@@ -202,6 +234,14 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
   // when startAnimation changes, it starts spawning cars
   useEffect(() => {
     if(startAnimation){
+      // define the traffic lights
+      new TrafficLight(lightImageRef.current, 0)
+      new TrafficLight(lightImageRef.current, 1)
+      new TrafficLight(lightImageRef.current, 2)
+      new TrafficLight(lightImageRef.current, 3)
+
+        // Start the cycle every 10 seconds
+      setInterval(TrafficLight.toggleLights, 10000);
       trafficFlow.current.forEach(({ from, to, vph }) => {
         generateCars(from, to, vph)
       })

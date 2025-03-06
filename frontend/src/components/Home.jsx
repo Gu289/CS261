@@ -14,6 +14,7 @@ const Home = ({ handleSimId }) => {
   const [startAnimation, setStartAnimation] = useState(false);
   const [junctionConfig, setJunctionConfig] = useState({});
   const [globalLeftTurn, setGlobalLeftTurn] = useState(false);
+  const [globalLanes, setGlobalLanes] = useState(2);
   const [status, setStatus] = useState("Not started");
 
   // Callback triggered when simulation starts/completes
@@ -97,8 +98,8 @@ const Home = ({ handleSimId }) => {
 
   return (
     <div className="bg-white h-screen grid grid-cols-3 overflow-y-hidden">
-      <Sidebar setStartAnimation={setStartAnimation} handleSimId={handleSimId} handleResults={handleResults} setJunctionConfig={setJunctionConfig} setGlobalLeftTurn={setGlobalLeftTurn} setStatus={setStatus}/>
-      <Simulation startAnimation={startAnimation} junctionConfig={junctionConfig} globalLeftTurn={globalLeftTurn} status={status}/>
+      <Sidebar setStartAnimation={setStartAnimation} handleSimId={handleSimId} handleResults={handleResults} setJunctionConfig={setJunctionConfig} setGlobalLeftTurn={setGlobalLeftTurn} setGlobalLanes={setGlobalLanes} setStatus={setStatus}/>
+      <Simulation startAnimation={startAnimation} junctionConfig={junctionConfig} globalLeftTurn={globalLeftTurn} globalLanes={globalLanes} status={status}/>
     {showResults && (
     <dialog
         open

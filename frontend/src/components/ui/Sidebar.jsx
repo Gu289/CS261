@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Link } from "react-router-dom";
 import axios from 'axios';
 
-const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionConfig, setGlobalLeftTurn, setStatus }) => {
+const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionConfig, setGlobalLeftTurn, setGlobalLanes, setStatus }) => {
 
   // used to efficiently map and return Input Form components
   const directions = ["north", "east", "south", "west"]
@@ -219,9 +219,9 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
       <div className="p-5 flex flex-col gap-5">
         {/* make input form for each direction */}
         {directions.map((direction, index) => (
-          <InputMenu key={index} inboundDirection={direction} directions={directions} handleTrafficChange={handleTrafficChange} trafficData={trafficData}/>
+          <InputMenu key={index} inboundDirection={direction} directions={directions} handleTrafficChange={handleTrafficChange} trafficData={trafficData} disabled={startSim}/>
         ))}
-        <ConfigMenu trafficData={trafficData} handleConfigurable={handleConfigurable} setGlobalLeftTurn={setGlobalLeftTurn} />
+        <ConfigMenu trafficData={trafficData} handleConfigurable={handleConfigurable} setGlobalLeftTurn={setGlobalLeftTurn} setGlobalLanes={setGlobalLanes} disabled={startSim}/>
         <div className="flex flex-col items-center gap-2">
           <button type="button" disabled={startSim} onClick={() => setStartSim(true)} className={`w-full text-2xl rounded-lg text-white px-5 py-3 shadow-md transition duration-300 
     ${startSim ? "bg-gray-400 cursor-not-allowed" : "bg-accent hover:bg-accent-hover cursor-pointer"}`}>Start Simulation</button>

@@ -1,8 +1,7 @@
 import InboundItem from './InboundItem'
 import OutboundItem from './OutboundItem';
-import { useState, useEffect } from 'react'
 
-const InputMenu = ({ inboundDirection, directions, handleTrafficChange, trafficData }) => {
+const InputMenu = ({ inboundDirection, directions, handleTrafficChange, trafficData, disabled }) => {
 
   const inboundCapitalize = inboundDirection.charAt(0).toUpperCase() + inboundDirection.slice(1)
 
@@ -12,10 +11,10 @@ const InputMenu = ({ inboundDirection, directions, handleTrafficChange, trafficD
             <h1 className="text-2xl" >{inboundCapitalize} Traffic</h1>
         </div>
             <div className="flex flex-col justify-center bg-primary rounded-lg shadow-md p-3">
-            <InboundItem direction={inboundDirection} trafficData={trafficData} handleTrafficChange={handleTrafficChange}/>
+            <InboundItem direction={inboundDirection} trafficData={trafficData} handleTrafficChange={handleTrafficChange} disabled={disabled}/>
             {/* make input items for each outbound directions  */}
             {directions.map((direction, index) => direction != inboundDirection && (
-                <OutboundItem key={index} direction={direction} inboundDirection={inboundDirection} trafficData={trafficData} handleTrafficChange={handleTrafficChange}/>
+                <OutboundItem key={index} direction={direction} disabled={disabled} inboundDirection={inboundDirection} trafficData={trafficData} handleTrafficChange={handleTrafficChange}/>
             )
             )}
         </div>
