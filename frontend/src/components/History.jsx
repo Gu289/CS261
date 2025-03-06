@@ -134,15 +134,42 @@ const Historynew = () => {
                             return true
                         }
                     }) && <p>Highest Scoring Simulation!</p>}
+                    <p className="text-lg mb-2">Efficiency Score</p>
+                    <div className="bg-gray-100 p-4 rounded flex items-center">
+                  <div className="w-20 h-20 rounded-full bg-white border-4 border-blue-500 flex items-center justify-center mr-4">
+                      <span className="text-2xl font-bold">
+                          {current.efficiency_score ? current.efficiency_score : 'N/A'}
+                      </span>
+                  </div>
+                  <div>
+                      <p className="font-medium">
+                          {current.efficiency_score >= 80 ? 'Excellent' : 
+                          current.efficiency_score >= 60 ? 'Good' : 
+                          current.efficiency_score >= 40 ? 'Average' : 'Needs Improvement'}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                          Based on average wait times, maximum wait times, and queue lengths across all directions
+                      </p>
+                  </div>
+              </div>
                     <p className="text-xl mt-5">Key Parameters</p>
                     {current.metrics && (
                             <ul className="grid grid-cols-2 gap-5 mt-5">
                                 {Object.entries(current.metrics).map(([direction, values]) => (
                                     <li key={direction}>
                                         <p className="text-lg font-bold capitalize">{direction}</p>
-                                        {Object.entries(values).map(([metric, value]) => (
-                                        <p key={metric}>{metric}: {value}</p>
-                                    ))}
+                                        {Object.entries(values).map(([metric, value]) => {
+                                            let word = ""
+                                            if(metric === "average_waiting_time"){
+                                                word = "Average Waiting Time"
+                                            } else if(metric === "max_waiting_time"){
+                                                word = "Maximum Waiting Time"
+                                            } else{
+                                                word = "Maximum Queue Length"
+                                            }
+
+                                            return (<p key={metric}>{word}: {value}</p>)
+                                        })}
                                     </li>
                                 ))}
                             </ul>

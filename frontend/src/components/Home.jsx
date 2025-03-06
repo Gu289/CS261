@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "./ui/Sidebar";
 import Simulation from "./simulation/Simulation";
+import axios from "axios";
 
 
 const Home = ({ handleSimId }) => {
@@ -21,51 +22,51 @@ const Home = ({ handleSimId }) => {
     setSimulationId(data.simulation_id);
   };
 
-  // useEffect(() => {
-  //   let interval;
-  //   if (simulationId) {
-  //     console.log("Starting polling for simulationId:", simulationId);
-  //     // Start polling the simulation status every 2 seconds
-  //     interval = setInterval(() => {
-  //       axios
-  //         .get(
-  //           `http://127.0.0.1:8000/simulation/check-simulation-status/?simulation_id=${simulationId}`
-  //         )
-  //         .then((response) => {
-  //           console.log("Status check response:", response.data);
-  //           if (response.data.simulation_status === "completed") {
-  //             clearInterval(interval);
-  //             // When completed, fetch the results
-  //             axios
-  //               .get(
-  //                 `http://127.0.0.1:8000/simulation/completed-simulation/?simulation_id=${simulationId}`
-  //               )
-  //               .then((completedResponse) => {
-  //                 console.log("Simulation data received:", completedResponse.data);
-  //                 setSimulationData(completedResponse.data);
-  //                 setShowResults(true);
-  //               })
-  //               .catch((error) => {
-  //                 console.error("Error fetching completed simulation data:", error);
-  //                 setError(
-  //                   `Failed to get simulation results: ${error.response?.status || error.message}`
-  //                 );
-  //                 // Even if this call fails, we should show something to the user
-  //                 setShowResults(true);
-  //                 setStartAnimation(false);
-  //               });
-  //           }
-  //         })
-  //         .catch((error) => {
-  //           console.error("Error checking simulation status:", error);
-  //           setError("Error checking simulation status");
-  //         });
-  //     }, 2000);
-  //   }
-  //   return () => {
-  //     if (interval) clearInterval(interval);
-  //   };
-  // }, [simulationId]);
+  useEffect(() => {
+    let interval;
+    if (simulationId) {
+      console.log("Starting polling for simulationId:", simulationId);
+      // Start polling the simulation status every 2 seconds
+      interval = setInterval(() => {
+        axios
+          .get(
+            `http://127.0.0.1:8000/simulation/check-simulation-status/?simulation_id=${simulationId}`
+          )
+          .then((response) => {
+            console.log("Status check response:", response.data);
+            if (response.data.simulation_status === "completed") {
+              clearInterval(interval);
+              // When completed, fetch the results
+              axios
+                .get(
+                  `http://127.0.0.1:8000/simulation/completed-simulation/?simulation_id=${simulationId}`
+                )
+                .then((completedResponse) => {
+                  console.log("Simulation data received:", completedResponse.data);
+                  setSimulationData(completedResponse.data);
+                  setShowResults(true);
+                })
+                .catch((error) => {
+                  console.error("Error fetching completed simulation data:", error);
+                  setError(
+                    `Failed to get simulation results: ${error.response?.status || error.message}`
+                  );
+                  // Even if this call fails, we should show something to the user
+                  setShowResults(true);
+                  setStartAnimation(false);
+                });
+            }
+          })
+          .catch((error) => {
+            console.error("Error checking simulation status:", error);
+            setError("Error checking simulation status");
+          });
+      }, 2000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [simulationId]);
 
   // Helper function to render any value, including nested objects
   const renderValue = (value) => {

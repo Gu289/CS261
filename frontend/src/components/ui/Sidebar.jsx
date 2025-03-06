@@ -112,6 +112,13 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
       if(inbound !== 0 || outboundSum !== 0){
         allZero = false;
       }
+
+      trafficData[dir].inbound = inbound;
+      Object.keys(trafficData[dir]).forEach(key => {
+        if (key !== "inbound") {
+          trafficData[dir][key] = Number(trafficData[dir][key]);
+        }
+      });
     }
 
     if(allZero){

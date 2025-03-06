@@ -6,17 +6,12 @@ import redLightSrc from "../../assets/red-light.png"; // Import traffic light
 import greenLightSrc from "../../assets/green-light.png";
 import Car from './entities/Car';
 import TrafficLight from './entities/TrafficLight';
-import { FaRegPauseCircle } from "react-icons/fa";
-import { FaRegPlayCircle } from "react-icons/fa";
 
 const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } ) => {
 
   const trafficFlow = useRef([]);
 
-  const isPausedRef = useRef(false);
-
   const [speed, setSpeed] = useState(1);
-  const [isPaused, setIsPaused] = useState(false);
 
   // track mouse position
   const [x, setX] = useState(0);
@@ -43,16 +38,8 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
     });
   };
 
-  const togglePause = () => {
-    isPausedRef.current = !isPausedRef.current;
-    setIsPaused(!isPaused)
-
-  }
-
   const animationLoop = (frontCtx, backgroundCtx) => {
-    if(!isPausedRef.current){
-      updateState();
-    }
+    updateState();
     renderFrame(frontCtx);
     animationFrameRef.current = requestAnimationFrame(() =>
       animationLoop(frontCtx, backgroundCtx)
@@ -201,7 +188,12 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
       animationLoop(frontCtx, backgroundCtx);
     });
 
-    return () => cancelAnimationFrame(animationFrameRef.current);
+    return () => {
+      cancelAnimationFrame(animationFrameRef.current);
+      const frontCtx = frontRef.current.getContext("2d");
+      frontCtx.clearRect(0, 0, frontRef.current.width, frontRef.current.height);
+      Object.values(spawnIntervals.current).forEach(clearInterval);
+    };
   }, []);
 
   // when startAnimation changes, it starts spawning cars
@@ -211,6 +203,8 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
         generateCars(from, to, vph)
       })
     }
+
+    return () => cancelAnimationFrame(animationFrameRef.current);
   }, [startAnimation])
 
   return (
@@ -236,8 +230,6 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, status } 
       </div>
       <nav className='bg-gray-200 w-full shadow-md p-4 rounded-lg flex justify-center items-center space-x-4'>
         <p>The simulation {status}</p>
-        {!isPaused && <FaRegPauseCircle className='w-6 h-6 cursor-pointer' onClick={togglePause}/>}
-        {isPaused && <FaRegPlayCircle className='w-6 h-6 cursor-pointer' onClick={togglePause}/>}
         <select
           value={speed}
           onChange={(e) => {
