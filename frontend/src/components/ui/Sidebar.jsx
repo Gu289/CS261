@@ -20,10 +20,10 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
   // state containing all traffic data
   // passed down to InputMenu -> InboundItem and InputMenu -> OutboundItem to show changed values
   const [trafficData, setTrafficData] = useState({
-    north: { inbound: 2000, east: 1000, south: 500, west: 500},
-    east: { inbound: 2000, north: 1000, south: 500, west: 500},
-    south: { inbound: 2000, north: 1000, east: 500, west: 500},
-    west:{ inbound: 2000, north: 1000, east: 500, south: 500},
+    north: { inbound: 0, east: 0, south: 0, west: 0},
+    east: { inbound: 0, north: 0, south: 0, west: 0},
+    south: { inbound: 0, north: 0, east: 0, west: 0},
+    west:{ inbound: 0, north: 0, east: 0, south: 0},
     leftTurn: false,
     numLanes: 2
   })
@@ -126,7 +126,7 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
       setStartSim(false)
       return false
     }
-
+    console.log("Inputs are validated successfully.");
     setErrorMsg("")
     handleConfig()
     return true
@@ -158,10 +158,13 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
   // then send post request with given simulation id to start the simulation
   const createSimulation = async () => {
     try {
+      console.log("Sending a POST request to create the simulation entry in the database...")
       const response = await axios.post("http://127.0.0.1:8000/simulation/create-simulation/",trafficData);
+      console.log(response);
       const sim_id = response.data.simulation_id
       handleSimId(sim_id)
       if(response.status === 200){
+        console.log("Sending POST request to start the simulation...")
         const res = await axios.post(`http://127.0.0.1:8000/simulation/start-simulation/?simulation_id=${sim_id}`)
         setStartAnimation(true);
         console.log(res);
@@ -184,6 +187,7 @@ const Sidebar = ( { handleSimId, handleResults, setStartAnimation, setJunctionCo
         setStatus("Running")
         const interval = setInterval(async () => {
           try{
+            console.log("Sending a GET request to check the simulation status...")
             const { data } = await axios.get(`http://127.0.0.1:8000/simulation/check-simulation-status/?simulation_id=${sim_id}`)
             console.log(data);
             if(data.simulation_status === "completed"){

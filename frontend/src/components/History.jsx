@@ -18,9 +18,10 @@ const Historynew = () => {
     // removes all simulation data from database
     const clearHistory = () => {
         try {
+            console.log(`Sending multiple DELETE requests to clear history of all simulations...`);
             simulations.forEach(async (simulation) => {
                 const response = await axios.delete(`http://127.0.0.1:8000/simulation/delete-simulation/?simulation_id=${simulation.simulation_id}`)
-                console.log("Clear History Response:",response);
+                // console.log("Clear History Response:",response);
             })
             setSimulations([]);
             setCurrent(null);
@@ -32,6 +33,7 @@ const Historynew = () => {
     // deletes the simulation given the id
     const deleteSimulation = async (id) => {
         try{
+            console.log(`Sending a DELETE request to remove simulation ${id} from the database...`)
             const response = await axios.delete(`http://127.0.0.1:8000/simulation/delete-simulation/?simulation_id=${id}`);
             console.log("Simulation Delete:", response);
             setSimulations(simulations.filter(sim => sim.simulation_id !== id));
@@ -59,6 +61,7 @@ const Historynew = () => {
 
     useEffect(() => {
         const getData = async () => {
+            console.log("Sending a GET request to fetch all completed simulations from the database...")
             const response = await axios.get(`http://127.0.0.1:8000/simulation/completed-simulations/`)
             console.log("All completed simulations:", response);
             setSimulations(response.data);

@@ -3,7 +3,7 @@ import TrafficLight from "./TrafficLight";
 export default class Car{
 
     static scale = 0.02;
-    static speed = 1;
+    static speed = 5;
     static cars = [];
     static angles = [
         3 * Math.PI / 2, // facing north

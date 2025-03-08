@@ -19,7 +19,7 @@ const Home = ({ handleSimId }) => {
 
   // Callback triggered when simulation starts/completes
   const handleResults = (data) => {
-    console.log("Received simulation data:", data);
+    // console.log("Received simulation data:", data);
     setSimulationId(data.simulation_id);
   };
 
@@ -38,6 +38,7 @@ const Home = ({ handleSimId }) => {
             if (response.data.simulation_status === "completed") {
               clearInterval(interval);
               // When completed, fetch the results
+              console.log("Sending a GET request to retrieve simulation results...")
               axios
                 .get(
                   `http://127.0.0.1:8000/simulation/completed-simulation/?simulation_id=${simulationId}`
@@ -97,7 +98,7 @@ const Home = ({ handleSimId }) => {
   };
 
   return (
-    <div className="bg-white h-screen grid grid-cols-3 overflow-y-hidden">
+    <div className="bg-gray-100 h-screen grid grid-cols-3 overflow-y-hidden">
       <Sidebar setStartAnimation={setStartAnimation} handleSimId={handleSimId} handleResults={handleResults} setJunctionConfig={setJunctionConfig} setGlobalLeftTurn={setGlobalLeftTurn} setGlobalLanes={setGlobalLanes} setStatus={setStatus}/>
       <Simulation startAnimation={startAnimation} junctionConfig={junctionConfig} globalLeftTurn={globalLeftTurn} globalLanes={globalLanes} status={status}/>
     {showResults && (

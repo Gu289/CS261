@@ -17,7 +17,7 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, globalLan
 
   const trafficFlow = useRef([]);
 
-  const [speed, setSpeed] = useState(1);
+  const [speed, setSpeed] = useState(2.5);
 
   // track mouse position
   const [x, setX] = useState(0);
@@ -250,7 +250,7 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, globalLan
   }, [startAnimation])
 
   return (
-    <div className="col-span-2 relative bg-gray-100 overflow-y-hidden p-5 flex flex-col items-center space-y-4">
+    <div className="col-span-2 mt-25 relative bg-gray-100 overflow-y-hidden p-5 flex flex-col items-center space-y-4">
       <div className="relative w-[600px] h-[600px]">
         <canvas
           ref={backgroundRef}
@@ -282,10 +282,10 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, globalLan
           }}
           className='p-2 rounded border'
         >
-          <option value={0.5}>0.5x</option>
-          <option value={1}>1x</option>
-          <option value={2}>2x</option>
-          <option value={4}>4x</option>
+          <option value={1.25}>0.5x</option>
+          <option value={2.5}>1x</option>
+          <option value={5}>2x</option>
+          <option value={10}>4x</option>
         </select>
         </div>
         
