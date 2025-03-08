@@ -158,15 +158,19 @@ const Home = ({ handleSimId }) => {
                           <p className="text-lg font-bold capitalize">{direction}</p>
                           {Object.entries(values).map(([metric, value]) => {
                               let word = ""
+                              let val = String(Math.round(value * 100) / 100)
                               if(metric === "average_waiting_time"){
                                   word = "Average Waiting Time"
+                                  val += " s"
                               } else if(metric === "max_waiting_time"){
                                   word = "Maximum Waiting Time"
+                                  val += " s"
                               } else{
                                   word = "Maximum Queue Length"
+                                  val += " cars"
                               }
 
-                              return (<p key={metric}>{word}: {Math.round(value)}</p>)
+                              return (<p key={metric}>{word}: {val}</p>)
                           })}
                       </li>
                   ))}
@@ -199,7 +203,7 @@ const Home = ({ handleSimId }) => {
                                 <li key={direction}>
                                     <p className="text-lg font-bold capitalize">{direction}</p>
                                     {Object.entries(values).map(([metric, value]) => (
-                                        <p key={metric}>{metric.charAt(0).toUpperCase() + metric.slice(1)}: {value}</p>
+                                        <p key={metric}>{metric.charAt(0).toUpperCase() + metric.slice(1)}: {value} vph</p>
                                     ))}
                                 </li>
                             ))}
