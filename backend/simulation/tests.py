@@ -180,7 +180,6 @@ class TestMetricsCalculation(TestCase):
             os.unlink(temp_file_path)
 
 
-# Add these test classes to your existing tests.py file
 
 class TestDequeuer(TestCase):
     """Tests for the Dequeuer class"""

@@ -78,7 +78,7 @@ class Enqueuer:
 
             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')} {direction} traffic, lane {incoming_lane}] A new vehicle going to the {vehicle.exit_direction} reached the junction.")
         
-        if self.vehicle_warehouse.is_abs_empty():
+        if self.vehicle_warehouse.is_one_empty():
             print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] No more vehicles in the warehouse. Stopping the simulation.")
             stop_event.set()
 
@@ -326,6 +326,10 @@ class VehiclesWarehouse:
     def is_empty(self, direction):
         with self.lock:
             return not bool(self.warehouse[direction])
+    
+    def is_one_empty(self):
+        with self.lock:
+            return any([not bool(self.warehouse[d]) for d in self.warehouse])
         
     def is_abs_empty(self):
         with self.lock:
@@ -412,8 +416,7 @@ class SimulationEngine:
         
         with connection.cursor() as cursor:
             cursor.execute(sql_query)
-            result = cursor.fetchall()  # If your query returns results
-        
+            result = cursor.fetchall()         
         metrics = {}
         for direction, average_waiting_time, max_waiting_time in result:
             metrics[direction] = {
@@ -453,7 +456,6 @@ class SimulationEngine:
         max_wait_max = max(valid_max) if valid_max else 0
         max_wait_min = min(valid_max) if valid_max else 0
 
-        # Create updated metrics where None values are replaced
         updated_metrics = {}
         for d in directions:
             updated_metrics[d] = {
@@ -547,7 +549,6 @@ class SimulationEngine:
                 if thread.is_alive():
                     thread.join(timeout=2)
             
-            # Then do cleanup
             Vehicle.objects.all().delete()
             from django.db import connection
             with connection.cursor() as cursor:
