@@ -250,7 +250,7 @@ const Simulation = ( { startAnimation, junctionConfig, globalLeftTurn, globalLan
   }, [startAnimation])
 
   return (
-    <div className="col-span-2 mt-25 relative bg-gray-100 overflow-y-hidden p-5 flex flex-col items-center space-y-4">
+    <div className="col-span-2 relative bg-gray-100 overflow-y-hidden p-5 flex flex-col items-center space-y-4">
       <div className="relative w-[600px] h-[600px]">
         <canvas
           ref={backgroundRef}
